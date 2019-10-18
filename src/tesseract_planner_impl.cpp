@@ -1,9 +1,6 @@
 #include "tesseract_planner_impl.h"
 
 #include <tesseract/tesseract.h>
-#include <tesseract_rosutils/utils.h>
-#include <tesseract_rosutils/conversions.h>
-#include <tesseract_rosutils/plotting.h>
 #include <trajopt/problem_description.hpp>
 #include <tesseract_motion_planners/trajopt/trajopt_freespace_planner.h>
 #include <boost/range/algorithm.hpp>
@@ -14,38 +11,28 @@ using namespace tesseract;
 using namespace tesseract_environment;
 using namespace tesseract_scene_graph;
 using namespace tesseract_collision;
-using namespace tesseract_rosutils;
 using namespace tesseract_motion_planners;
 namespace geometry = com::robotraconteur::geometry;
 namespace trajectory = com::robotraconteur::robotics::trajectory;
 
 namespace tesseract_robotraconteur
 {
-    TesseractPlannerImpl::TesseractPlannerImpl(ros::NodeHandle nh) : nh_(nh), 
+    TesseractPlannerImpl::TesseractPlannerImpl() :
         tesseract_(std::make_shared<tesseract::Tesseract>())
     {
         
     }
 
-    void TesseractPlannerImpl::Init(const std::string& ros_description_param_name, const std::string& ros_description_semantic_param_name)
-    {
-        std::string urdf_xml_string;
-        std::string srdf_xml_string;
-
-        nh_.getParam(ros_description_param_name, urdf_xml_string);
-        nh_.getParam(ros_description_semantic_param_name, srdf_xml_string);
-
-        ResourceLocatorFn locator = tesseract_rosutils::locateResource;
+    void TesseractPlannerImpl::Init(const std::string& urdf_xml_string, const std::string& srdf_xml_string, std::function<std::string(std::string)> locator)
+    {        
         if (!tesseract_->init(urdf_xml_string, srdf_xml_string, locator))
-            throw RR::OperationFailedException("Tesseract initialization failed. Check urdf and srdf files.");
-
-        plotter_ = std::make_shared<ROSPlotting>(tesseract_->getEnvironment());
+            throw RR::OperationFailedException("Tesseract initialization failed. Check urdf and srdf files.");       
     }
 
     RR::GeneratorPtr<planning::PlanningResponsePtr,void> TesseractPlannerImpl::plan(planning::PlanningRequestPtr request)
     {
         auto gen = RR_MAKE_SHARED<PlannerGenerator>();
-        gen->InitPlanner(tesseract_, plotter_, request);
+        gen->InitPlanner(tesseract_, request);
         return gen; 
     }
 
@@ -100,7 +87,6 @@ namespace tesseract_robotraconteur
     }
 
     void PlannerGenerator::InitPlanner(std::shared_ptr<tesseract::Tesseract> tesseract, 
-            std::shared_ptr<tesseract_rosutils::ROSPlotting> plotter,
             planning::PlanningRequestPtr request
         )
     {
@@ -110,7 +96,6 @@ namespace tesseract_robotraconteur
         }
 
         tesseract_ = tesseract;
-        plotter_ = plotter;
         request_ = request;
 
         std::string manipulator = request->device->name;
@@ -219,8 +204,6 @@ namespace tesseract_robotraconteur
             planning::PlanningResponsePtr planner_res(new planning::PlanningResponse());
             planner_res->status_code = planning::PlannerStatusCode::success;
             planner_res->joint_trajectory=rr_trajectory;
-
-            plotter_->plotTrajectory(response.joint_trajectory.joint_names,response.joint_trajectory.trajectory);
 
             return planner_res;
         }

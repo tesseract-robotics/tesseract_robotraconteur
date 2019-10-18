@@ -48,27 +48,13 @@
   <!--   <test_depend>gtest</test_depend> -->
   <!-- Use doc_depend for packages you need only for building documentation: -->
   <!--   <doc_depend>doxygen</doc_depend> -->
-  <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>robotraconteur</build_depend>
-  <build_depend>robotraconteur_standard_robdef_cpp</build_depend>
-  <build_depend>tesseract</build_depend>
-  <build_depend>tesseract_rosutils</build_depend>
-  <build_depend>roscpp</build_depend>
-  <build_export_depend>robotraconteur</build_export_depend>
-  <build_export_depend>robotraconteur_standard_robdef_cpp</build_export_depend>
-  <build_export_depend>tesseract</build_export_depend>
-  <build_export_depend>tesseract_rosutils</build_export_depend>
-  <build_export_depend>roscpp</build_export_depend>
-  <exec_depend>robotraconteur</exec_depend>
-  <exec_depend>robotraconteur_standard_robdef_cpp</exec_depend>
-  <exec_depend>tesseract</exec_depend>
-  <exec_depend>tesseract_rosutils</exec_depend>
-  <exec_depend>roscpp</exec_depend>
+  <depend>robotraconteur</depend>
+  <depend>robotraconteur_standard_robdef_cpp</depend>
+  <depend>tesseract</depend>
+  <depend>trajopt</depend>
+  
 
-
-  <!-- The export tag contains other, unspecified, tags -->
-  <export>
-    <!-- Other tools can request additional information be placed here -->
-
+  <export>    
+    <build_type>cmake</build_type>
   </export>
 </package>

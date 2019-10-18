@@ -1,18 +1,11 @@
 #include <RobotRaconteur.h>
 #include "robotraconteur_generated.h"
 
-#include <ros/ros.h>
-
 #pragma once
 
 namespace tesseract
 {
     class Tesseract;
-}
-
-namespace tesseract_rosutils
-{
-    class ROSPlotting;
 }
 
 namespace tesseract_motion_planners
@@ -30,18 +23,16 @@ namespace tesseract_robotraconteur
         public boost::enable_shared_from_this<TesseractPlannerImpl>
     {
     public:
-        TesseractPlannerImpl(ros::NodeHandle nh);
+        TesseractPlannerImpl();
 
-        void Init(const std::string& ros_description_param_name = "robot_description", 
-            const std::string& ros_description_semantic_param_name = "robot_description_semantic");
+        void Init(const std::string& urdf_xml_string, const std::string& srdf_xml_string,
+            std::function<std::string(std::string)> locator);
         
         virtual RR::GeneratorPtr<planning::PlanningResponsePtr,void> plan(planning::PlanningRequestPtr request);
 
     protected:
 
         std::shared_ptr<tesseract::Tesseract> tesseract_;
-        ros::NodeHandle nh_;
-        std::shared_ptr<tesseract_rosutils::ROSPlotting> plotter_;
     };
 
     using TesseractPlannerImplPtr = RR_SHARED_PTR<TesseractPlannerImpl>;
@@ -50,8 +41,7 @@ namespace tesseract_robotraconteur
     {
     public:
 
-        void InitPlanner(std::shared_ptr<tesseract::Tesseract> tesseract, 
-            std::shared_ptr<tesseract_rosutils::ROSPlotting> plotter,
+        void InitPlanner(std::shared_ptr<tesseract::Tesseract> tesseract,            
             planning::PlanningRequestPtr request
         );
 
@@ -64,7 +54,6 @@ namespace tesseract_robotraconteur
     protected:
 
         std::shared_ptr<tesseract::Tesseract> tesseract_;        
-        std::shared_ptr<tesseract_rosutils::ROSPlotting> plotter_;
         planning::PlanningRequestPtr request_;
         std::shared_ptr<tesseract_motion_planners::TrajOptFreespacePlannerConfig> planner_config_;
         std::shared_ptr<tesseract_motion_planners::TrajOptFreespacePlanner> planner_;
