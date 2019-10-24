@@ -1,18 +1,14 @@
 #include <RobotRaconteur.h>
 #include "robotraconteur_generated.h"
+#include <tesseract/tesseract.h>
+#include <trajopt/problem_description.hpp>
+#include <tesseract_motion_planners/trajopt/config/trajopt_planner_freespace_config.h>
+#include <boost/range/algorithm.hpp>
+#include <boost/range/algorithm_ext.hpp>
+#include <tesseract_motion_planners/trajopt/trajopt_motion_planner.h>
+
 
 #pragma once
-
-namespace tesseract
-{
-    class Tesseract;
-}
-
-namespace tesseract_motion_planners
-{
-    class TrajOptFreespacePlannerConfig;
-    class TrajOptFreespacePlanner;
-}
 
 namespace tesseract_robotraconteur
 {
@@ -55,8 +51,8 @@ namespace tesseract_robotraconteur
 
         std::shared_ptr<tesseract::Tesseract> tesseract_;        
         planning::PlanningRequestPtr request_;
-        std::shared_ptr<tesseract_motion_planners::TrajOptFreespacePlannerConfig> planner_config_;
-        std::shared_ptr<tesseract_motion_planners::TrajOptFreespacePlanner> planner_;
+        std::shared_ptr<tesseract_motion_planners::TrajOptPlannerFreespaceConfig> planner_config_;
+        std::shared_ptr<tesseract_motion_planners::TrajOptMotionPlanner> planner_;
         boost::mutex this_lock;
         bool closed = false;
         bool aborted = false;

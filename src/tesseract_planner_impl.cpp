@@ -1,11 +1,5 @@
 #include "tesseract_planner_impl.h"
 
-#include <tesseract/tesseract.h>
-#include <trajopt/problem_description.hpp>
-#include <tesseract_motion_planners/trajopt/trajopt_freespace_planner.h>
-#include <boost/range/algorithm.hpp>
-#include <boost/range/algorithm_ext.hpp>
-
 using namespace trajopt;
 using namespace tesseract;
 using namespace tesseract_environment;
@@ -108,20 +102,22 @@ namespace tesseract_robotraconteur
         auto joint_names = kin->getJointNames();
         auto tip_link = kin->getTipLinkName();
         
-        auto config = std::make_shared<TrajOptFreespacePlannerConfig>();
+        Eigen::Isometry3d tcp;
 
-        config->link_ = tip_link;
-        config->manipulator_ = manipulator;
+        auto config = std::make_shared<TrajOptPlannerFreespaceConfig>(tesseract_, manipulator, tip_link, tcp);
 
-        config->collision_safety_margin_ = request->collision_safety_margin;
-        config->collision_check_ = request->collision_check.value;
+        config->link = tip_link;
+        config->manipulator = manipulator;
+
+        config->collision_safety_margin = request->collision_safety_margin;
+        config->collision_check = request->collision_check.value;
 
         if (!request->start_waypoint) throw RR::NullValueException("start_waypoint must not be null");
         if (!request->goal_waypoint) throw RR::NullValueException("goal_waypoint must not be null");
         
 
-        config->start_waypoint_ = rr_waypoint_to_tesseract(request->start_waypoint, joint_names);
-        config->end_waypoint_ = rr_waypoint_to_tesseract(request->goal_waypoint, joint_names);
+        config->target_waypoints.push_back(rr_waypoint_to_tesseract(request->start_waypoint, joint_names));
+        config->target_waypoints.push_back(rr_waypoint_to_tesseract(request->goal_waypoint, joint_names));
 
         if (request->planner_specific)
         {
@@ -130,7 +126,7 @@ namespace tesseract_robotraconteur
             {
                 auto num_steps = RR_DYNAMIC_POINTER_CAST<RR::RRArray<double> >(e->second);
                 if (!num_steps || num_steps->size() != 1) throw RR::InvalidArgumentException("num_steps must be an int32 scalar");
-                config->num_steps_ = num_steps->at(0);
+                config->num_steps = num_steps->at(0);
             }
 
             auto e2 = request->planner_specific->find("collision_continuous");
@@ -138,11 +134,11 @@ namespace tesseract_robotraconteur
             {
                 auto collision_continuous = RR_DYNAMIC_POINTER_CAST<RR::RRArray<RR::rr_bool> >(e->second);
                 if (!collision_continuous || collision_continuous->size() != 1) throw RR::InvalidArgumentException("collision_continuous must be a bool scalar");
-                config->collision_continuous_ = collision_continuous->at(0).value;
+                config->collision_continuous = collision_continuous->at(0).value;
             }
         }
 
-        config->tesseract_ = tesseract_;
+        config->tesseract = tesseract_;
 
         this->planner_config_ = config;
 
@@ -157,9 +153,9 @@ namespace tesseract_robotraconteur
 
         if (!planner_)
         {
-            planner_ = std::make_shared<TrajOptFreespacePlanner>();
-            RR_NULL_CHECK(planner_config_);
-            planner_->setConfiguration(*planner_config_);
+            planner_ = std::make_shared<TrajOptMotionPlanner>();
+            RR_NULL_CHECK(planner_config_);           
+            planner_->setConfiguration(planner_config_);
 
             PlannerResponse response;
 

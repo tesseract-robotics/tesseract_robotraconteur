@@ -6,6 +6,8 @@ set (CMAKE_CXX_STANDARD 11)
 find_package(tesseract REQUIRED)
 find_package(tesseract_environment REQUIRED)
 find_package(tesseract_kinematics REQUIRED)
+find_package(tesseract_visualization REQUIRED)
+find_package(tesseract_motion_planners REQUIRED)
 #find_package(tesseract_rosutils REQUIRED)
 find_package(trajopt REQUIRED)
 find_package(trajopt_utils REQUIRED)
@@ -26,6 +28,8 @@ include_directories(${RobotRaconteur_INCLUDE_DIR}
                     ${tesseract_INCLUDE_DIRS}
                     ${tesseract_environment_INCLUDE_DIRS}
                     ${tesseract_kinematics_INCLUDE_DIRS}
+                    ${tesseract_visualization_INCLUDE_DIRS}
+                    ${tesseract_motion_planners_INCLUDE_DIRS}
                     ${BULLET_INCLUDE_DIRS}
                     ${trajopt_INCLUDE_DIRS}
                     ${trajopt_utils_INCLUDE_DIRS}
@@ -69,7 +73,7 @@ target_link_libraries(tesseract_robotraconteur_service
     RobotRaconteurCore    
     ${catkin_LIBRARIES}
     tesseract::tesseract_motion_planners_core
-    tesseract::tesseract_motion_planners_trajopt_freespace
+    tesseract::tesseract_motion_planners_trajopt
     tesseract::tesseract
     trajopt::trajopt_sco
     jsoncpp_lib
