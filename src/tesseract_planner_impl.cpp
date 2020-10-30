@@ -1,13 +1,22 @@
 #include "tesseract_planner_impl.h"
 
+#include "RobotRaconteurCompanion/Converters/EigenConverters.h"
+#include "RobotRaconteurCompanion/Util/IdentifierUtil.h"
+#include <tuple>
+#include <tesseract_time_parameterization/iterative_spline_parameterization.h>
+#include <tesseract_motion_planners/simple/profile/simple_planner_interpolation_plan_profile.h>
+
 using namespace trajopt;
 using namespace tesseract;
 using namespace tesseract_environment;
 using namespace tesseract_scene_graph;
 using namespace tesseract_collision;
-using namespace tesseract_motion_planners;
+using namespace tesseract_planning;
 namespace geometry = com::robotraconteur::geometry;
 namespace trajectory = com::robotraconteur::robotics::trajectory;
+using namespace RobotRaconteur::Companion::Converters::Eigen;
+using namespace RobotRaconteur::Companion::Util;
+
 
 namespace tesseract_robotraconteur
 {
@@ -17,7 +26,7 @@ namespace tesseract_robotraconteur
         
     }
 
-    void TesseractPlannerImpl::Init(const std::string& urdf_xml_string, const std::string& srdf_xml_string, std::function<std::string(std::string)> locator)
+    void TesseractPlannerImpl::Init(const std::string& urdf_xml_string, const std::string& srdf_xml_string, const tesseract_scene_graph::ResourceLocator::Ptr& locator)
     {        
         if (!tesseract_->init(urdf_xml_string, srdf_xml_string, locator))
             throw RR::OperationFailedException("Tesseract initialization failed. Check urdf and srdf files.");       
@@ -30,54 +39,195 @@ namespace tesseract_robotraconteur
         return gen; 
     }
 
-    static Eigen::Isometry3d rr_pose_to_eigen(const geometry::Pose& rr_pose)
+    geometry::NamedPosePtr TesseractPlannerImpl::fwdkin(identifier::IdentifierPtr robot_identifier, RR::RRArrayPtr<double> joint_position, identifier::IdentifierPtr tip_link)
     {
-        Eigen::Quaterniond q(rr_pose.s.orientation.s.w,rr_pose.s.orientation.s.x,rr_pose.s.orientation.s.y,rr_pose.s.orientation.s.z);
-        Eigen::Vector3d p(rr_pose.s.position.s.x, rr_pose.s.position.s.y, rr_pose.s.position.s.z);
+        if (!robot_identifier)
+        {
+            throw RR::InvalidArgumentException("Device must be specified!");
+        }
 
-        Eigen::Isometry3d t;
-        t.fromPositionOrientationScale(p,q,Eigen::Vector3d::Ones());
-        return t;
+        if (!IsIdentifierAnyUuid(robot_identifier))
+        {
+            throw RR::InvalidArgumentException("UUID not supported for device identifier");
+        }
+
+        std::string manipulator_name = robot_identifier->name;
+        auto kin = tesseract_->getManipulatorManager()->getFwdKinematicSolver(manipulator_name);
+        if (!kin)
+        {
+            throw RR::InvalidArgumentException("Invalid device specified");
+        }
+
+        auto joint_names = kin->getJointNames();
+        auto tip_link_s = kin->getTipLinkName();
+        auto base_link_s = kin->getBaseLinkName();
+
+        if (tip_link)
+        {
+            if (!IsIdentifierAnyUuid(tip_link))
+            {
+                throw RR::InvalidArgumentException("UUID not supported for TCP identifier");
+            }
+            tip_link_s = tip_link->name;
+        }
+
+        Eigen::Isometry3d fwdkin_res;
+        if(!kin->calcFwdKin(fwdkin_res, RRArrayToEigen<Eigen::VectorXd>(joint_position), tip_link_s))
+        {
+            throw RR::OperationFailedException("FwdKin failed");
+        }
+
+        geometry::NamedPosePtr res(new geometry::NamedPose());
+        res->frame = CreateIdentifierFromName(tip_link_s);
+        res->parent_frame = CreateIdentifierFromName(base_link_s);
+        res->pose = ToPose(fwdkin_res);
+        return res;        
     }
 
-    static Eigen::VectorXd rr_array_to_eigen(RR::RRArrayPtr<double> rr_array)
+    RR::RRListPtr<planning::InvKinResult> TesseractPlannerImpl::invkin(identifier::IdentifierPtr robot_identifier, geometry::NamedPosePtr tcp_pose, RR::RRArrayPtr<double> seed)
     {
-        Eigen::VectorXd ret = Eigen::Map<Eigen::VectorXd>(&rr_array->at(0),rr_array->size());
-        return ret;
+        if (!robot_identifier)
+        {
+            throw RR::InvalidArgumentException("Device must be specified!");
+        }
+
+        if (!IsIdentifierAnyUuid(robot_identifier))
+        {
+            throw RR::InvalidArgumentException("UUID not supported for device identifier");
+        }
+
+        std::string manipulator_name = robot_identifier->name;
+        auto kin = tesseract_->getManipulatorManager()->getInvKinematicSolver(manipulator_name);
+        if (!kin)
+        {
+            throw RR::InvalidArgumentException("Invalid device specified");
+        }
+
+        auto joint_names = kin->getJointNames();
+        auto tip_link_s = kin->getTipLinkName();
+        auto base_link_s = kin->getBaseLinkName();
+
+        if (!tcp_pose)
+        {
+            throw RR::InvalidArgumentException("Target TCP pose must be specified!");
+        }
+
+        if (tcp_pose->parent_frame)
+        {
+            if (!IsIdentifierAnyUuid(tcp_pose->parent_frame))
+            {
+                throw RR::InvalidArgumentException("UUID not supported for frame identifier");
+            }
+            if (tcp_pose->parent_frame->name != base_link_s)
+            {
+                throw RR::InvalidArgumentException("Parent frame must match base link: " + base_link_s);
+            }            
+        }
+
+        if (tcp_pose->frame)
+        {
+            if (!IsIdentifierAnyUuid(tcp_pose->frame))
+            {
+                throw RR::InvalidArgumentException("UUID not supported for TCP identifier");
+            }
+            tip_link_s = tcp_pose->frame->name;
+        }
+
+        Eigen::VectorXd solutions;
+
+        if (!kin->calcInvKin(solutions, ToIsometry(tcp_pose->pose), RRArrayToEigen<Eigen::VectorXd>(seed)))
+        {
+            throw RR::OperationFailedException("InvKin failed");
+        }
+
+        size_t n_joints = joint_names.size();
+        size_t n_results = solutions.size() / n_joints;
+
+        auto res = RR::AllocateEmptyRRList<planning::InvKinResult>();
+        for (size_t i = 0; i<n_results; i++)
+        {
+            auto res1 = RR::AllocateEmptyRRList<RR::RRArray<double> >();
+            Eigen::VectorXd solution = solutions.segment(i*n_joints,n_joints);
+            res1->push_back(EigenToRRArray(solution));
+            planning::InvKinResultPtr res2(new planning::InvKinResult());
+            res2->joints = res1;
+            res->push_back(res2); 
+        }
+        return res;
     }
 
-    static Waypoint::Ptr rr_waypoint_to_tesseract(RR::RRValuePtr rr_waypoint, std::vector<std::string> joint_names)
+
+
+    static std::string rr_waypoint_get_profile(RR::RRMapPtr<std::string,RR::RRValue> waypoint_extended)
+    {
+        std::string profile = "DEFAULT";
+
+        if (waypoint_extended)
+        {
+            auto e_profile = waypoint_extended->find("profile");
+            if (e_profile !=waypoint_extended->end())
+            {
+                profile = RR::RRArrayToString(RR::rr_cast<RR::RRArray<char> >(e_profile->second));
+            }
+        }
+
+        return profile;
+    } 
+
+    static PlanInstructionType rr_waypoint_get_instruction_type(planning::PlannerMotionTypeCode::PlannerMotionTypeCode rr_code)
+    {
+        PlanInstructionType instruction_type = PlanInstructionType::FREESPACE;
+        switch (rr_code)
+        {
+            case planning::PlannerMotionTypeCode::default_:
+            case planning::PlannerMotionTypeCode::freespace:
+                break;
+            case planning::PlannerMotionTypeCode::linear:
+                instruction_type = PlanInstructionType::LINEAR;
+                break;
+            case planning::PlannerMotionTypeCode::cylindrical:
+                instruction_type = PlanInstructionType::CIRCULAR;
+                break;
+            case planning::PlannerMotionTypeCode::start:
+                instruction_type = PlanInstructionType::START;
+                break;
+            default:
+                throw RR::InvalidArgumentException("Invalid motion type specified");
+        }
+
+        return instruction_type;
+    }
+
+    static std::tuple<PlanInstruction,planning::PlannerMotionTypeCode::PlannerMotionTypeCode> rr_waypoint_to_tesseract(RR::RRValuePtr rr_waypoint, std::vector<std::string> joint_names)
     {        
         planning::JointWaypointPtr rr_joint_waypoint = RR_DYNAMIC_POINTER_CAST<planning::JointWaypoint>(rr_waypoint);
         if (rr_joint_waypoint)
         {
-            auto joint_waypoint = std::make_shared<JointWaypoint>(rr_array_to_eigen(rr_joint_waypoint->joint_positions), joint_names);
-            joint_waypoint->setIsCritical((bool)rr_joint_waypoint->is_critical.value);
-            joint_waypoint->setCoefficients(rr_array_to_eigen(rr_joint_waypoint->coeffs));
-            return joint_waypoint;
+            JointWaypoint joint_waypoint(joint_names, RRArrayToEigen<Eigen::VectorXd>(rr_joint_waypoint->joint_positions));
+            
+            std::string profile = rr_waypoint_get_profile(rr_joint_waypoint->extended);
+            PlanInstructionType instruction_type = rr_waypoint_get_instruction_type(rr_joint_waypoint->motion_type);
+            
+            PlanInstruction plan_instruction(joint_waypoint, instruction_type, profile);
+            
+            return std::make_tuple(plan_instruction,rr_joint_waypoint->motion_type);
         }
 
-        planning::JointTolerancedWaypointPtr rr_joint_toleranced_waypoint = RR_DYNAMIC_POINTER_CAST<planning::JointTolerancedWaypoint>(rr_waypoint);
-        if (rr_joint_toleranced_waypoint)
-        {
-            auto joint_toleranced_waypoint = std::make_shared<JointTolerancedWaypoint>(rr_array_to_eigen(rr_joint_toleranced_waypoint->joint_positions), joint_names);
-            joint_toleranced_waypoint->setIsCritical((bool)rr_joint_toleranced_waypoint->is_critical.value);
-            joint_toleranced_waypoint->setCoefficients(rr_array_to_eigen(rr_joint_toleranced_waypoint->coeffs));
-            joint_toleranced_waypoint->setLowerTolerance(rr_array_to_eigen(rr_joint_toleranced_waypoint->lower_tolerance));
-            joint_toleranced_waypoint->setUpperTolerance(rr_array_to_eigen(rr_joint_toleranced_waypoint->upper_tolerance));
-            return joint_toleranced_waypoint;
-        }
-
+        
         planning::CartesianWaypointPtr rr_cartesian_waypoint = RR_DYNAMIC_POINTER_CAST<planning::CartesianWaypoint>(rr_waypoint);
         if (rr_cartesian_waypoint)
-        {
-            auto cartesian_waypoint = std::make_shared<CartesianWaypoint>(rr_pose_to_eigen(rr_cartesian_waypoint->cartesion_position));
-            cartesian_waypoint->setIsCritical((bool)rr_cartesian_waypoint->is_critical.value);
-            cartesian_waypoint->setCoefficients(rr_array_to_eigen(rr_cartesian_waypoint->coeffs));
-            return cartesian_waypoint;
+        {    
+            CartesianWaypoint cart_waypoint(ToIsometry(rr_cartesian_waypoint->position));
+
+            std::string profile = rr_waypoint_get_profile(rr_cartesian_waypoint->extended);
+            PlanInstructionType instruction_type = rr_waypoint_get_instruction_type(rr_cartesian_waypoint->motion_type);
+            
+            PlanInstruction plan_instruction(cart_waypoint, instruction_type, profile);
+            
+            return std::make_tuple(plan_instruction,rr_cartesian_waypoint->motion_type);
         }
 
-        throw RR::InvalidArgumentException("Invalid planning waypoint type argument. Expected JointWaypoint, JointTolerancedWaypoint, or CartesianWaypoint.");
+        throw RR::InvalidArgumentException("Invalid planning waypoint type argument. Expected JointWaypoint or CartesianWaypoint.");
     }
 
     void PlannerGenerator::InitPlanner(std::shared_ptr<tesseract::Tesseract> tesseract, 
@@ -90,10 +240,20 @@ namespace tesseract_robotraconteur
         }
 
         tesseract_ = tesseract;
-        request_ = request;
+        rr_request_ = request;
 
-        std::string manipulator = request->device->name;
-        auto kin = tesseract->getFwdKinematicsManager()->getFwdKinematicSolver(manipulator);
+        if (!request->device)
+        {
+            throw RR::InvalidArgumentException("Device must be specified!");
+        }
+
+        if (!IsIdentifierAnyUuid(request->device))
+        {
+            throw RR::InvalidArgumentException("UUID not supported for device identifier");
+        }
+
+        std::string manipulator_name = request->device->name;
+        auto kin = tesseract->getManipulatorManager()->getFwdKinematicSolver(manipulator_name);
         if (!kin)
         {
             throw RR::InvalidArgumentException("Invalid device specified");
@@ -102,45 +262,192 @@ namespace tesseract_robotraconteur
         auto joint_names = kin->getJointNames();
         auto tip_link = kin->getTipLinkName();
         
-        Eigen::Isometry3d tcp;
+        ManipulatorInfo manip;
+        manip.manipulator = manipulator_name;
+        manip.manipulator_ik_solver = "OPWInvKin";
+        manip.working_frame = tesseract->getEnvironment()->getRootLinkName();
+        manip.tcp = ToIsometry(request->tcp);
 
-        auto config = std::make_shared<TrajOptPlannerFreespaceConfig>(tesseract_, manipulator, tip_link, tcp);
-
-        config->link = tip_link;
-        config->manipulator = manipulator;
-
-        config->collision_safety_margin = request->collision_safety_margin;
-        config->collision_check = request->collision_check.value;
-
-        if (!request->start_waypoint) throw RR::NullValueException("start_waypoint must not be null");
-        if (!request->goal_waypoint) throw RR::NullValueException("goal_waypoint must not be null");
+        size_t n_joints = joint_names.size();
         
+        bool use_simple_planner = false;
+        bool use_trajopt_planner = false;
 
-        config->target_waypoints.push_back(rr_waypoint_to_tesseract(request->start_waypoint, joint_names));
-        config->target_waypoints.push_back(rr_waypoint_to_tesseract(request->goal_waypoint, joint_names));
-
-        if (request->planner_specific)
+        if (!request->planner_algorithm)
         {
-            auto e = request->planner_specific->find("num_steps");
-            if (e != request->planner_specific->end())
+            throw RR::InvalidArgumentException("Planner algorithm must be specified");
+        }
+        else
+        {
+            auto trajopt_identifier = CreateIdentifier("trajopt","d4b75ab6-7f3f-423d-a497-0d6678fcee12");
+            auto simple_identifier = CreateIdentifier("simple","a777721c-6696-49f3-b4e9-db41250d8576");
+            if (IsIdentifierMatch(simple_identifier, request->planner_algorithm))
             {
-                auto num_steps = RR_DYNAMIC_POINTER_CAST<RR::RRArray<double> >(e->second);
-                if (!num_steps || num_steps->size() != 1) throw RR::InvalidArgumentException("num_steps must be an int32 scalar");
-                config->num_steps = num_steps->at(0);
+                use_simple_planner = true;
+            }
+            if (IsIdentifierMatch(trajopt_identifier, request->planner_algorithm))
+            {
+                use_trajopt_planner = true;
             }
 
-            auto e2 = request->planner_specific->find("collision_continuous");
-            if (e2 != request->planner_specific->end())
+            if (!use_simple_planner && !use_trajopt_planner)
             {
-                auto collision_continuous = RR_DYNAMIC_POINTER_CAST<RR::RRArray<RR::rr_bool> >(e->second);
-                if (!collision_continuous || collision_continuous->size() != 1) throw RR::InvalidArgumentException("collision_continuous must be a bool scalar");
-                config->collision_continuous = collision_continuous->at(0).value;
+                throw RR::InvalidArgumentException("Unsupported planner algorithm");
+            }
+
+        }
+
+        if (request->filter_algorithm)
+        {
+            auto time_parameterization_identifier = CreateIdentifier("iterative_spline","b4215679-665a-4aee-8e99-0a19a9db7f63");
+            if (!IsIdentifierMatch(time_parameterization_identifier, request->filter_algorithm))
+            {
+                throw RR::InvalidArgumentException("Unsupported filter algorithm");
+            }
+
+            max_velocity_ = Eigen::VectorXd(n_joints);
+            max_acceleration_ = Eigen::VectorXd(n_joints);
+            for (size_t i = 0; i<n_joints; i++)
+            {
+                auto j_name = joint_names[i];
+                auto j_limits = tesseract_->getEnvironment()->getJoint(j_name)->limits;
+                if (!j_limits)
+                {
+                    max_velocity_[i] = 1e9;    
+                    max_acceleration_[i] = 1e9;
+                }
+                else
+                {
+                    max_velocity_[i] = (j_limits->velocity != 0) ? j_limits->velocity : 1e9;
+                    max_acceleration_[i] = (j_limits->acceleration != 0) ? j_limits->acceleration : 1e9;
+                }
+            }
+
+            auto filter_extended = request->filter_specific;
+            if (filter_extended)
+            {
+                auto max_velocity_e = filter_extended->find("max_velocity");
+                if (max_velocity_e != filter_extended->end())
+                {
+                    auto max_velocity_req = RRArrayToEigen<Eigen::VectorXd>(RR::rr_cast<RR::RRArray<double> >(max_velocity_e->second));
+                    if (max_velocity_req.size() != n_joints)
+                    {
+                        throw RR::InvalidArgumentException("max_velocity must have same number of elements as joints");
+                    }
+                    max_velocity_ = max_velocity_req;
+                }
+
+                auto max_acceleration_e = filter_extended->find("max_acceleration");
+                if (max_acceleration_e != filter_extended->end())
+                {
+                    auto max_acceleration_req = RRArrayToEigen<Eigen::VectorXd>(RR::rr_cast<RR::RRArray<double> >(max_acceleration_e->second));
+                    if (max_acceleration_req.size() != n_joints)
+                    {
+                        throw RR::InvalidArgumentException("max_acceleration must have same number of elements as joints");
+                    }
+                    max_acceleration_ = max_acceleration_req;
+                }
+
+                auto max_velocity_scaling_factor_e = filter_extended->find("max_velocity_scaling_factor");
+                if (max_velocity_scaling_factor_e != filter_extended->end())
+                {
+                    auto max_velocity_scaling_factor_req = RR::RRArrayToScalar<double>(RR::rr_cast<RR::RRArray<double> >(max_velocity_scaling_factor_e->second));
+                    if (max_velocity_scaling_factor_req <= 0)
+                    {
+                        throw RR::InvalidArgumentException("max_velocity_scaling_factor must be greater than zero");
+                    }
+
+                    max_velocity_scaling_factor_ = max_velocity_scaling_factor_req;
+                }
+
+                auto max_acceleration_scaling_factor_e = filter_extended->find("max_acceleration_scaling_factor");
+                if (max_acceleration_scaling_factor_e != filter_extended->end())
+                {
+                    auto max_acceleration_scaling_factor_req = RR::RRArrayToScalar<double>(RR::rr_cast<RR::RRArray<double> >(max_acceleration_scaling_factor_e->second));
+                    if (max_acceleration_scaling_factor_req <= 0)
+                    {
+                        throw RR::InvalidArgumentException("max_acceleration_scaling_factor must be greater than zero");
+                    }
+
+                    max_acceleration_scaling_factor_ = max_acceleration_scaling_factor_req;
+                }
+            }
+
+            use_iterative_spline_ = true;
+        }
+
+        if (!request->waypoints)
+        {
+            throw RR::InvalidArgumentException("Waypoints in planning request must not be null");
+        }
+
+        if (request->waypoints->size() < 2)
+        {
+            throw RR::InvalidArgumentException("Request must contain at least two waypoints");
+        }
+
+        CompositeInstruction program("DEFAULT");
+        for (auto e =request->waypoints->begin(); e != request->waypoints->end(); ++e)
+        {
+            auto& wp_i = *e; 
+            auto instruction1 = rr_waypoint_to_tesseract(wp_i, joint_names);
+            auto instruction = std::get<0>(instruction1);
+            if (e == request->waypoints->begin())
+            {
+                switch(std::get<1>(instruction1))
+                {
+                    case planning::PlannerMotionTypeCode::default_:
+                        instruction.setPlanType(PlanInstructionType::START);
+                        break;
+                    case planning::PlannerMotionTypeCode::start:
+                        break;
+                    default:
+                        throw RR::InvalidArgumentException("First waypoint must be default or start motion type");
+                }
+
+                program.setStartInstruction(instruction);
+            }
+            else
+            {
+                program.push_back(instruction);
             }
         }
 
-        config->tesseract = tesseract_;
+        program.setManipulatorInfo(manip);
 
-        this->planner_config_ = config;
+
+        auto cur_state = tesseract->getEnvironment()->getCurrentState();
+
+        if (use_simple_planner)
+        {
+            auto plan_profile = std::make_shared<SimplePlannerInterpolationPlanProfile>();
+            plan_profile->setCartesianSteps(25);
+            plan_profile->setFreespaceSteps(25);
+            
+            auto simple_planner = std::make_shared<SimpleMotionPlanner>();
+            simple_planner->plan_profiles["DEFAULT"] = plan_profile;
+            planner_ = simple_planner;
+        }
+
+        if (use_trajopt_planner)
+        {
+            auto plan_profile = std::make_shared<TrajOptDefaultPlanProfile>();
+            auto composite_profile = std::make_shared<TrajOptDefaultCompositeProfile>();
+
+            auto trajopt_planner = std::make_shared<TrajOptMotionPlanner>();
+            trajopt_planner->plan_profiles["DEFAULT"] = plan_profile;
+            trajopt_planner->composite_profiles["DEFAULT"] = composite_profile;
+            trajopt_planner->problem_generator = &DefaultTrajoptProblemGenerator;
+            planner_ = trajopt_planner;
+        }
+
+        CompositeInstruction seed = generateSeed(program, cur_state, tesseract,25,25);
+
+        request_ = std::make_shared<PlannerRequest>();
+        request_->seed = seed;
+        request_->instructions = program;
+        request_->tesseract = tesseract;
+        request_->env_state = tesseract->getEnvironment()->getCurrentState(); 
 
     }
 
@@ -151,23 +458,54 @@ namespace tesseract_robotraconteur
         if (aborted) throw RR::OperationAbortedException("Planning aborted");
         if (closed) throw RR::StopIterationException("Planning closed");        
 
-        if (!planner_)
+        if (request_)
         {
-            planner_ = std::make_shared<TrajOptMotionPlanner>();
-            RR_NULL_CHECK(planner_config_);           
-            planner_->setConfiguration(planner_config_);
-
+            
+            auto request1 = request_;
+            request_.reset();
             PlannerResponse response;
 
-            auto res = planner_->solve(response);
+            auto res = planner_->solve(*request1,response);
+
             if (!res)
             {
-                throw new RR::OperationFailedException("Planning failed: " + res.message());
+                throw RR::OperationFailedException("Planning failed: " + res.message());
             }
+
+            auto result_instructions = flatten(response.results);
+
+            if (use_iterative_spline_)
+            {
+                tesseract_planning::IterativeSplineParameterization filter;
+                if (!filter.compute(result_instructions,max_velocity_,max_acceleration_,
+                    max_velocity_scaling_factor_,max_acceleration_scaling_factor_))
+                {
+                    throw RR::OperationFailedException("Iterative spline filter failed");
+                }
+            }
+
+            for (auto instr1 : result_instructions)
+            {
+                auto& instr = instr1.get();
+                
+                if(instr.getType() != (int)InstructionType::MOVE_INSTRUCTION)
+                {
+                    throw RR::OperationFailedException("Unexpected instruction type returned from TrajOpt planner");
+                }
+                if(instr.cast<MoveInstruction>()->getWaypoint().getType() != (int)WaypointType::STATE_WAYPOINT)
+                {
+                    throw RR::OperationFailedException("Unexpected waypoint type returned from TrajOpt planner");
+                }
+            }
+
+
 
             trajectory::JointTrajectoryPtr rr_trajectory(new trajectory::JointTrajectory());
             rr_trajectory->joint_names = RR::AllocateEmptyRRList<RR::RRArray<char> >();
-            for (auto& s : response.joint_trajectory.joint_names)
+
+            
+
+            for (auto& s : result_instructions.at(0).get().cast<MoveInstruction>()->getWaypoint().cast<StateWaypoint>()->joint_names)
             {
                 rr_trajectory->joint_names->push_back(RR::stringToRRArray(s));
             }
@@ -179,21 +517,16 @@ namespace tesseract_robotraconteur
             rr_trajectory->joint_units = joint_units;
             rr_trajectory->waypoints = RR::AllocateEmptyRRList<trajectory::JointTrajectoryWaypoint>();
 
-            auto& traj = response.joint_trajectory.trajectory;
-            for (size_t i=0; i<traj.rows(); i++)
+            for (size_t i=0; i<result_instructions.size(); i++)
             {
+                auto& wp_i = *result_instructions.at(i).get().cast<MoveInstruction>()->getWaypoint().cast<StateWaypoint>();
                 trajectory::JointTrajectoryWaypointPtr rr_waypoint(new trajectory::JointTrajectoryWaypoint());
-                auto pos = RR::AllocateRRArray<double>(traj.cols());
-                for (size_t j=0; j<traj.cols(); j++)
-                {
-                    pos->at(j) = traj(i,j);
-                }
-                rr_waypoint->joint_position = pos;
-                rr_waypoint->joint_velocity = RR::AllocateEmptyRRArray<double>(traj.cols());
-                rr_waypoint->position_tolerance = RR::AllocateEmptyRRArray<double>(traj.cols());
-                rr_waypoint->velocity_tolerance = RR::AllocateEmptyRRArray<double>(traj.cols());
+                rr_waypoint->joint_position = EigenToRRArray<double>(wp_i.position);
+                rr_waypoint->joint_velocity = EigenToRRArray<double>(wp_i.velocity);
+                rr_waypoint->position_tolerance = RR::AllocateEmptyRRArray<double>(wp_i.position.size());
+                rr_waypoint->velocity_tolerance = RR::AllocateEmptyRRArray<double>(wp_i.position.size());
                 rr_waypoint->interpolation_mode = trajectory::InterpolationMode::default_;
-                rr_waypoint->time_from_start = (double)i;
+                rr_waypoint->time_from_start = wp_i.time;
                 rr_trajectory->waypoints->push_back(rr_waypoint);
             }
             closed=true;
@@ -207,10 +540,6 @@ namespace tesseract_robotraconteur
         {
             throw RR::StopIterationException("Planning complete");
         }
-        
-
-        
-
     }
 
     void PlannerGenerator::Close()

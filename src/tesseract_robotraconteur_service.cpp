@@ -3,11 +3,11 @@
 #include <RobotRaconteur.h>
 #include <boost/program_options.hpp>
 
-#include "robotraconteur_generated.h"
 #include "tesseract_planner_impl.h"
 
 #include "yaml-cpp/yaml.h"
 #include <boost/locale.hpp>
+#include <RobotRaconteurCompanion/StdRobDef/StdRobDefAll.h>
 
 using namespace RobotRaconteur;
 using namespace tesseract_robotraconteur;
@@ -45,7 +45,7 @@ void load_resource_buckets()
     }
 }
 
-std::string locator(const std::string& url)
+std::string locator_function(const std::string& url)
 {
     //Based on tesseract_rosutils/utils.h locateResource
 
@@ -119,9 +119,6 @@ int main(int argc, char* argv[])
 {
 
     load_resource_buckets();
-    
-    uint16_t rr_port;
-    std::string rr_nodename;
 
     std::string urdf_fname;
     std::string srdf_fname;
@@ -129,8 +126,6 @@ int main(int argc, char* argv[])
     po::options_description generic_("Allowed options");
 	generic_.add_options()
 		("help,h", "print usage message")
-        ("robotraconteur-nodename", po::value(&rr_nodename)->default_value("org.swri.tesseract"), "set nodename of tesseract service node")
-		("robotraconteur-tcp-port", po::value(&rr_port)->default_value(63158), "set port for TcpTransport")
 		("urdf-file", po::value(&urdf_fname), "URDF filename")
         ("srdf-file", po::value(&srdf_fname), "SRDF filename");
 
@@ -148,10 +143,13 @@ int main(int argc, char* argv[])
     std::stringstream srdf_buffer;
     srdf_buffer << srdf_t.rdbuf();
 
-    ServerNodeSetup node_setup(ROBOTRACONTEUR_SERVICE_TYPES, rr_nodename, rr_port);
+    RobotRaconteur::Companion::RegisterStdRobDefServiceTypes();
+    ServerNodeSetup node_setup(std::vector<ServiceFactoryPtr>(), "org.swri.tesseract", 63158, argc, argv);
+
+    auto resource_locator = std::make_shared<tesseract_scene_graph::SimpleResourceLocator>(locator_function);
 
     auto obj = RR_MAKE_SHARED<TesseractPlannerImpl>();
-    obj->Init(urdf_buffer.str(), srdf_buffer.str(), locator);
+    obj->Init(urdf_buffer.str(), srdf_buffer.str(), resource_locator);
 
     RR::RobotRaconteurNode::s()->RegisterService("tesseract","com.robotraconteur.robotics.planning", obj);
 

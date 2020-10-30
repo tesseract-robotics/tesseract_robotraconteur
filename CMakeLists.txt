@@ -8,6 +8,7 @@ find_package(tesseract_environment REQUIRED)
 find_package(tesseract_kinematics REQUIRED)
 find_package(tesseract_visualization REQUIRED)
 find_package(tesseract_motion_planners REQUIRED)
+find_package(tesseract_time_parameterization REQUIRED)
 #find_package(tesseract_rosutils REQUIRED)
 find_package(trajopt REQUIRED)
 find_package(trajopt_utils REQUIRED)
@@ -15,7 +16,7 @@ find_package(trajopt_sco REQUIRED)
 find_package(tesseract_motion_planners REQUIRED)
 find_package(Bullet REQUIRED)
 find_package(RobotRaconteur REQUIRED)
-find_package(RobotRaconteur_standard_robdef_cpp REQUIRED)
+find_package(RobotRaconteurCompanion REQUIRED)
 find_package(assimp REQUIRED)
 find_package(jsoncpp REQUIRED)
 find_package(yaml-cpp REQUIRED)
@@ -30,36 +31,13 @@ include_directories(${RobotRaconteur_INCLUDE_DIR}
                     ${tesseract_kinematics_INCLUDE_DIRS}
                     ${tesseract_visualization_INCLUDE_DIRS}
                     ${tesseract_motion_planners_INCLUDE_DIRS}
+                    ${tesseract_time_parameterization_INCLUDE_DIRS}
                     ${BULLET_INCLUDE_DIRS}
                     ${trajopt_INCLUDE_DIRS}
                     ${trajopt_utils_INCLUDE_DIRS}
                     ${trajopt_sco_INCLUDE_DIRS}
                     ${YAML_CPP_INCLUDE_DIR}
                     )
-
-ROBOTRACONTEUR_GENERATE_THUNK(RR_THUNK_SRCS RR_THUNK_HDRS
-    com.robotraconteur.geometry.robdef
-    com.robotraconteur.geometry.shapes.robdef
-    com.robotraconteur.color.robdef
-    com.robotraconteur.units.robdef
-    com.robotraconteur.datetime.robdef
-    com.robotraconteur.sensordata.robdef
-    com.robotraconteur.uuid.robdef
-    com.robotraconteur.datatype.robdef
-    com.robotraconteur.device.robdef
-    com.robotraconteur.signal.robdef
-    com.robotraconteur.param.robdef
-    com.robotraconteur.robotics.joints.robdef
-    com.robotraconteur.robotics.robot.robdef
-    com.robotraconteur.robotics.tool.robdef
-    com.robotraconteur.robotics.payload.robdef
-    com.robotraconteur.robotics.trajectory.robdef
-    com.robotraconteur.robotics.planning.robdef
-    com.robotraconteur.identifier.robdef
-    com.robotraconteur.resource.robdef
-    MASTER_HEADER
-    IMPORT_DIRS ${CMAKE_CURRENT_SOURCE_DIR} ${RobotRaconteur_STANDARD_ROBDEF_DIRS}
-)
 
 add_executable(tesseract_robotraconteur_service 
     src/tesseract_robotraconteur_service.cpp
@@ -70,10 +48,12 @@ add_executable(tesseract_robotraconteur_service
 )
 
 target_link_libraries(tesseract_robotraconteur_service 
-    RobotRaconteurCore    
-    ${catkin_LIBRARIES}
+    RobotRaconteurCore
+    RobotRaconteurCompanion
     tesseract::tesseract_motion_planners_core
     tesseract::tesseract_motion_planners_trajopt
+    tesseract::tesseract_motion_planners_simple
+    tesseract::tesseract_time_parameterization
     tesseract::tesseract
     trajopt::trajopt_sco
     jsoncpp_lib

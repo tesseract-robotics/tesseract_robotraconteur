@@ -1,12 +1,22 @@
 #include <RobotRaconteur.h>
-#include "robotraconteur_generated.h"
+#include <RobotRaconteurCompanion/StdRobDef/StdRobDefAll.h>
 #include <tesseract/tesseract.h>
-#include <trajopt/problem_description.hpp>
-#include <tesseract_motion_planners/trajopt/config/trajopt_planner_freespace_config.h>
+
 #include <boost/range/algorithm.hpp>
 #include <boost/range/algorithm_ext.hpp>
 #include <tesseract_motion_planners/trajopt/trajopt_motion_planner.h>
 
+#include <tesseract_command_language/plan_instruction.h>
+#include <tesseract_command_language/composite_instruction.h>
+#include <tesseract_command_language/joint_waypoint.h>
+#include <tesseract_command_language/cartesian_waypoint.h>
+
+#include <tesseract_motion_planners/trajopt/trajopt_motion_planner.h>
+#include <tesseract_motion_planners/trajopt/profile/trajopt_default_plan_profile.h>
+#include <tesseract_motion_planners/trajopt/profile/trajopt_default_composite_profile.h>
+#include <tesseract_motion_planners/core/utils.h>
+#include <tesseract_motion_planners/trajopt/problem_generators/default_problem_generator.h>
+#include <tesseract_motion_planners/interface_utils.h>
 
 #pragma once
 
@@ -14,6 +24,8 @@ namespace tesseract_robotraconteur
 {
     namespace RR = RobotRaconteur;
     namespace planning = com::robotraconteur::robotics::planning;
+    namespace identifier = com::robotraconteur::identifier;
+    namespace geometry = com::robotraconteur::geometry;
 
     class TesseractPlannerImpl : public planning::Planner_default_impl, 
         public boost::enable_shared_from_this<TesseractPlannerImpl>
@@ -22,9 +34,14 @@ namespace tesseract_robotraconteur
         TesseractPlannerImpl();
 
         void Init(const std::string& urdf_xml_string, const std::string& srdf_xml_string,
-            std::function<std::string(std::string)> locator);
+            const tesseract_scene_graph::ResourceLocator::Ptr& locator);
         
-        virtual RR::GeneratorPtr<planning::PlanningResponsePtr,void> plan(planning::PlanningRequestPtr request);
+        virtual RR::GeneratorPtr<planning::PlanningResponsePtr,void> plan(planning::PlanningRequestPtr request) override;
+
+        virtual geometry::NamedPosePtr fwdkin(identifier::IdentifierPtr robot_identifier, RR::RRArrayPtr<double> joint_position, identifier::IdentifierPtr tip_link) override;
+
+        virtual RR::RRListPtr<planning::InvKinResult> invkin(identifier::IdentifierPtr robot_identifier, geometry::NamedPosePtr tcp_pose, RR::RRArrayPtr<double> seed) override;
+
 
     protected:
 
@@ -50,9 +67,14 @@ namespace tesseract_robotraconteur
     protected:
 
         std::shared_ptr<tesseract::Tesseract> tesseract_;        
-        planning::PlanningRequestPtr request_;
-        std::shared_ptr<tesseract_motion_planners::TrajOptPlannerFreespaceConfig> planner_config_;
-        std::shared_ptr<tesseract_motion_planners::TrajOptMotionPlanner> planner_;
+        planning::PlanningRequestPtr rr_request_;
+        std::shared_ptr<tesseract_planning::PlannerRequest> request_;
+        std::shared_ptr<tesseract_planning::MotionPlanner> planner_;
+        Eigen::VectorXd max_velocity_;
+        Eigen::VectorXd max_acceleration_;
+        double max_velocity_scaling_factor_ = 1.0;
+        double max_acceleration_scaling_factor_ = 1.0;
+        bool use_iterative_spline_ = false;
         boost::mutex this_lock;
         bool closed = false;
         bool aborted = false;
