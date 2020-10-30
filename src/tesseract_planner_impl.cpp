@@ -35,7 +35,12 @@ namespace tesseract_robotraconteur
     RR::GeneratorPtr<planning::PlanningResponsePtr,void> TesseractPlannerImpl::plan(planning::PlanningRequestPtr request)
     {
         auto gen = RR_MAKE_SHARED<PlannerGenerator>();
-        gen->InitPlanner(tesseract_, request);
+        tesseract::Tesseract::Ptr tesseract_copy;
+        {
+            boost::mutex::scoped_lock lock(this_lock);
+            tesseract_copy = tesseract_->clone();
+        }
+        gen->InitPlanner(tesseract_copy, request);
         return gen; 
     }
 
@@ -156,6 +161,75 @@ namespace tesseract_robotraconteur
         return res;
     }
 
+    RR::RRListPtr<planning::ContactResult> TesseractPlannerImpl::compute_contacts(planning::PlannerJointPositionsPtr joint_position, planning::ContactTestTypeCode::ContactTestTypeCode contact_test_type, double contact_distance)
+    {
+        if (!joint_position)
+        {
+            throw RR::InvalidArgumentException("joint_position must not be null");
+        }
+
+        if (!joint_position->joint_position)
+        {
+            throw RR::InvalidArgumentException("joint_position must not be null");
+        }
+
+        if (joint_position->model_joints)
+        {
+            throw RR::InvalidArgumentException("Models not supported");
+        }
+
+        std::unordered_map<std::string, double> joints;
+        for (auto v : *joint_position->joint_position)
+        {
+            if (v.second->size() != 1)
+            {
+                throw RR::InvalidArgumentException("Each joint entry must be scalar");
+            }
+
+            joints.insert(std::make_pair(v.first,RR::RRArrayToScalar(v.second)));
+        }
+
+        tesseract::Tesseract::Ptr tesseract_copy;
+        {
+            boost::mutex::scoped_lock lock(this_lock);
+            tesseract_copy = tesseract_->clone();
+        }
+
+        tesseract_copy->getEnvironment()->setState(joints);
+        auto state = tesseract_copy->getEnvironment()->getCurrentState();
+        auto manager = tesseract_copy->getEnvironment()->getDiscreteContactManager();
+        manager->setCollisionObjectsTransform(state->link_transforms);
+        manager->setContactDistanceThreshold(contact_distance);
+
+        tesseract_collision::ContactResultMap contact_results;
+        ContactRequest req((ContactTestType)contact_test_type);
+        manager->contactTest(contact_results, req);
+
+        tesseract_collision::ContactResultVector contacts_vector;
+        tesseract_collision::flattenResults(std::move(contact_results), contacts_vector);
+        
+        auto res = RR::AllocateEmptyRRList<planning::ContactResult>();
+
+        for (const auto& contact : contacts_vector)
+        {
+            planning::ContactResultPtr res1(new planning::ContactResult());
+            res1->distance = contact.distance;
+            res1->link1_name = contact.link_names[0];
+            res1->link2_name = contact.link_names[1];
+            res1->link1_nearest_point = ToVector3(contact.nearest_points[0]);
+            res1->link2_nearest_point = ToVector3(contact.nearest_points[1]);
+            res1->link1_nearest_point_local = ToVector3(contact.nearest_points_local[0]);
+            res1->link2_nearest_point_local = ToVector3(contact.nearest_points_local[1]);
+            res1->link1_transform = ToPose(contact.transform[0]);
+            res1->link2_transform = ToPose(contact.transform[1]);
+            res1->normal = ToVector3(contact.normal);
+
+            res->push_back(res1);
+        }
+
+        return res;
+    }
+
 
 
     static std::string rr_waypoint_get_profile(RR::RRMapPtr<std::string,RR::RRValue> waypoint_extended)
@@ -238,6 +312,7 @@ namespace tesseract_robotraconteur
         {
             throw RR::NullValueException("request must not be none");
         }
+
 
         tesseract_ = tesseract;
         rr_request_ = request;

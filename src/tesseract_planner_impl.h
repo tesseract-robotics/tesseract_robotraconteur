@@ -42,6 +42,7 @@ namespace tesseract_robotraconteur
 
         virtual RR::RRListPtr<planning::InvKinResult> invkin(identifier::IdentifierPtr robot_identifier, geometry::NamedPosePtr tcp_pose, RR::RRArrayPtr<double> seed) override;
 
+        virtual RR::RRListPtr<planning::ContactResult> compute_contacts(planning::PlannerJointPositionsPtr joint_position, planning::ContactTestTypeCode::ContactTestTypeCode contact_test_type, double contact_distance) override;
 
     protected:
 

@@ -49,11 +49,12 @@
   <!-- Use doc_depend for packages you need only for building documentation: -->
   <!--   <doc_depend>doxygen</doc_depend> -->
   <depend>robotraconteur</depend>
-  <depend>robotraconteur_standard_robdef_cpp</depend>
+  <depend>robotraconteur_companion</depend>
   <depend>tesseract</depend>
   <depend>tesseract_visualization</depend>
   <depend>tesseract_collision</depend>
   <depend>tesseract_urdf</depend>
+  <depend>tesseract_motion_planners</depend>
   <depend>trajopt</depend>
   
 
