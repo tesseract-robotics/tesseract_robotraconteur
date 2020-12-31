@@ -5,9 +5,9 @@
 #include <tuple>
 #include <tesseract_time_parameterization/iterative_spline_parameterization.h>
 #include <tesseract_motion_planners/simple/profile/simple_planner_interpolation_plan_profile.h>
+#include <tesseract_environment/kdl/kdl_state_solver.h>
 
 using namespace trajopt;
-using namespace tesseract;
 using namespace tesseract_environment;
 using namespace tesseract_scene_graph;
 using namespace tesseract_collision;
@@ -21,21 +21,21 @@ using namespace RobotRaconteur::Companion::Util;
 namespace tesseract_robotraconteur
 {
     TesseractPlannerImpl::TesseractPlannerImpl() :
-        tesseract_(std::make_shared<tesseract::Tesseract>())
+        tesseract_(std::make_shared<tesseract_environment::Environment>())
     {
         
     }
 
     void TesseractPlannerImpl::Init(const std::string& urdf_xml_string, const std::string& srdf_xml_string, const tesseract_scene_graph::ResourceLocator::Ptr& locator)
     {        
-        if (!tesseract_->init(urdf_xml_string, srdf_xml_string, locator))
+        if (!tesseract_->init<tesseract_environment::KDLStateSolver>(urdf_xml_string, srdf_xml_string, locator))
             throw RR::OperationFailedException("Tesseract initialization failed. Check urdf and srdf files.");       
     }
 
     RR::GeneratorPtr<planning::PlanningResponsePtr,void> TesseractPlannerImpl::plan(planning::PlanningRequestPtr request)
     {
         auto gen = RR_MAKE_SHARED<PlannerGenerator>();
-        tesseract::Tesseract::Ptr tesseract_copy;
+        tesseract_environment::Environment::Ptr tesseract_copy;
         {
             boost::mutex::scoped_lock lock(this_lock);
             tesseract_copy = tesseract_->clone();
@@ -189,15 +189,15 @@ namespace tesseract_robotraconteur
             joints.insert(std::make_pair(v.first,RR::RRArrayToScalar(v.second)));
         }
 
-        tesseract::Tesseract::Ptr tesseract_copy;
+        tesseract_environment::Environment::Ptr tesseract_copy;
         {
             boost::mutex::scoped_lock lock(this_lock);
             tesseract_copy = tesseract_->clone();
         }
 
-        tesseract_copy->getEnvironment()->setState(joints);
-        auto state = tesseract_copy->getEnvironment()->getCurrentState();
-        auto manager = tesseract_copy->getEnvironment()->getDiscreteContactManager();
+        tesseract_copy->setState(joints);
+        auto state = tesseract_copy->getCurrentState();
+        auto manager = tesseract_copy->getDiscreteContactManager();
         manager->setCollisionObjectsTransform(state->link_transforms);
         manager->setContactDistanceThreshold(contact_distance);
 
@@ -291,7 +291,7 @@ namespace tesseract_robotraconteur
         planning::CartesianWaypointPtr rr_cartesian_waypoint = RR_DYNAMIC_POINTER_CAST<planning::CartesianWaypoint>(rr_waypoint);
         if (rr_cartesian_waypoint)
         {    
-            CartesianWaypoint cart_waypoint(ToIsometry(rr_cartesian_waypoint->position));
+            CartesianWaypoint cart_waypoint(ToIsometry(RR::rr_null_check(rr_cartesian_waypoint->pose)->pose));
 
             std::string profile = rr_waypoint_get_profile(rr_cartesian_waypoint->extended);
             PlanInstructionType instruction_type = rr_waypoint_get_instruction_type(rr_cartesian_waypoint->motion_type);
@@ -304,7 +304,7 @@ namespace tesseract_robotraconteur
         throw RR::InvalidArgumentException("Invalid planning waypoint type argument. Expected JointWaypoint or CartesianWaypoint.");
     }
 
-    void PlannerGenerator::InitPlanner(std::shared_ptr<tesseract::Tesseract> tesseract, 
+    void PlannerGenerator::InitPlanner(std::shared_ptr<tesseract_environment::Environment> tesseract, 
             planning::PlanningRequestPtr request
         )
     {
@@ -339,8 +339,8 @@ namespace tesseract_robotraconteur
         
         ManipulatorInfo manip;
         manip.manipulator = manipulator_name;
-        manip.manipulator_ik_solver = "OPWInvKin";
-        manip.working_frame = tesseract->getEnvironment()->getRootLinkName();
+        //manip.manipulator_ik_solver = "OPWInvKin";
+        manip.working_frame = tesseract->getRootLinkName();
         manip.tcp = ToIsometry(request->tcp);
 
         size_t n_joints = joint_names.size();
@@ -385,7 +385,7 @@ namespace tesseract_robotraconteur
             for (size_t i = 0; i<n_joints; i++)
             {
                 auto j_name = joint_names[i];
-                auto j_limits = tesseract_->getEnvironment()->getJoint(j_name)->limits;
+                auto j_limits = tesseract_->getJoint(j_name)->limits;
                 if (!j_limits)
                 {
                     max_velocity_[i] = 1e9;    
@@ -491,7 +491,7 @@ namespace tesseract_robotraconteur
         program.setManipulatorInfo(manip);
 
 
-        auto cur_state = tesseract->getEnvironment()->getCurrentState();
+        auto cur_state = tesseract->getCurrentState();
 
         if (use_simple_planner)
         {
@@ -521,8 +521,8 @@ namespace tesseract_robotraconteur
         request_ = std::make_shared<PlannerRequest>();
         request_->seed = seed;
         request_->instructions = program;
-        request_->tesseract = tesseract;
-        request_->env_state = tesseract->getEnvironment()->getCurrentState(); 
+        request_->env = tesseract;
+        request_->env_state = tesseract->getCurrentState(); 
 
     }
 

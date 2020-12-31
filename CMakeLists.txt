@@ -3,7 +3,6 @@ project(tesseract_robotraconteur)
 
 set (CMAKE_CXX_STANDARD 11)
 
-find_package(tesseract REQUIRED)
 find_package(tesseract_environment REQUIRED)
 find_package(tesseract_kinematics REQUIRED)
 find_package(tesseract_visualization REQUIRED)
@@ -54,7 +53,8 @@ target_link_libraries(tesseract_robotraconteur_service
     tesseract::tesseract_motion_planners_trajopt
     tesseract::tesseract_motion_planners_simple
     tesseract::tesseract_time_parameterization
-    tesseract::tesseract
+    tesseract::tesseract_environment_core
+    tesseract::tesseract_environment_kdl
     trajopt::trajopt_sco
     jsoncpp_lib
     yaml-cpp

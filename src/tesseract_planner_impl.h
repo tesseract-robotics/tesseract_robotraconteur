@@ -1,6 +1,6 @@
 #include <RobotRaconteur.h>
 #include <RobotRaconteurCompanion/StdRobDef/StdRobDefAll.h>
-#include <tesseract/tesseract.h>
+#include <tesseract_environment/core/environment.h>
 
 #include <boost/range/algorithm.hpp>
 #include <boost/range/algorithm_ext.hpp>
@@ -46,7 +46,7 @@ namespace tesseract_robotraconteur
 
     protected:
 
-        std::shared_ptr<tesseract::Tesseract> tesseract_;
+        std::shared_ptr<tesseract_environment::Environment> tesseract_;
     };
 
     using TesseractPlannerImplPtr = RR_SHARED_PTR<TesseractPlannerImpl>;
@@ -55,7 +55,7 @@ namespace tesseract_robotraconteur
     {
     public:
 
-        void InitPlanner(std::shared_ptr<tesseract::Tesseract> tesseract,            
+        void InitPlanner(std::shared_ptr<tesseract_environment::Environment> tesseract,            
             planning::PlanningRequestPtr request
         );
 
@@ -67,7 +67,7 @@ namespace tesseract_robotraconteur
 
     protected:
 
-        std::shared_ptr<tesseract::Tesseract> tesseract_;        
+        std::shared_ptr<tesseract_environment::Environment> tesseract_;        
         planning::PlanningRequestPtr rr_request_;
         std::shared_ptr<tesseract_planning::PlannerRequest> request_;
         std::shared_ptr<tesseract_planning::MotionPlanner> planner_;
