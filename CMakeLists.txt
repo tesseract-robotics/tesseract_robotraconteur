@@ -77,3 +77,5 @@ include(GNUInstallDirs)
 
 install(TARGETS tesseract_robotraconteur_service
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+add_subdirectory(examples/cpp)
