@@ -1,0 +1,16 @@
+service experimental.tesseract_robotics.tasks.planning
+
+stdver 0.10
+
+import experimental.tesseract_robotics.common
+
+using experimental.tesseract_robotics.common.ManipulatorInfo
+
+struct PlanningTaskComposerProblem
+    field string name
+    field varvalue input
+    field string environment_name
+    field ManipulatorInfo manip_info
+    # TODO: profiles ...
+    field varvalue{string} extended
+end

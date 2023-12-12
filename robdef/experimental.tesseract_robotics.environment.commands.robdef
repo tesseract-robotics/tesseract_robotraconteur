@@ -1,0 +1,119 @@
+service experimental.tesseract_robotics.environment.commands
+
+stdver 0.10
+
+import experimental.tesseract_robotics.scene_graph
+import com.robotraconteur.geometry
+
+using experimental.tesseract_robotics.scene_graph.Joint
+using experimental.tesseract_robotics.scene_graph.Link
+using experimental.tesseract_robotics.scene_graph.SceneGraph
+using com.robotraconteur.geometry.Pose
+
+struct AddContactManagersPluginInfoCommand
+    # Placeholder only
+    field int32 noop
+end
+
+struct AddKinematicsInformationCommand
+    # TODO
+    field int32 noop
+end
+
+struct AddLinkCommand
+    field Link link
+    field Joint joint
+    field bool replace_allowed
+end
+
+struct AddSceneGraphCommand
+    field SceneGraph scene_graph
+    field Joint joint
+    field string prefix
+end
+
+struct AddTrajectoryLinkCommand
+    # TODO
+    field int32 noop
+end
+
+struct ChangeCollisionMarginsCommand
+    # TODO
+    field int32 noop
+end
+
+struct ChangeJointAccelerationLimitsCommand
+    field double{string} limits
+end
+
+struct ChangeJointOriginCommand
+    field string joint_name
+    field Pose origin
+end
+
+struct ChangeJointPositionLimitsCommand
+    field double[2]{string} limits
+end
+
+struct ChangeJointVelocityLimitsCommand
+    field double{string} limits
+end
+
+struct ChangeLinkCollisionEnabledCommand
+    field string link_name
+    field bool enabled
+end
+
+struct ChangeLinkOriginCommand
+    field string link_name
+    field Pose origin
+end
+
+struct ChangeLinkVisibilityCommand
+    field string link_name
+    field bool visible
+end
+
+struct ModifyAllowedCollisionsCommand
+    # TODO
+    field int32 noop
+end
+
+struct MoveJointCommand
+    field string joint_name
+    field string parent_link
+end
+
+struct MoveLinkCommand
+    field Joint joint
+end
+
+struct RemoveAllowedCollisionLinkCommand
+    # TODO
+    field int32 noop
+end
+
+struct RemoveJointCommand
+    field string joint_name
+end
+
+struct RemoveLinkCommand
+    field string link_name
+end
+
+struct ReplaceJointCommand
+    field Joint joint
+end
+
+struct SetActiveContinuousContactManagerCommand
+    field string active_contact_manager_name
+end
+
+struct SetActiveDiscreteContactManagerCommand
+    field string active_contact_manager_name
+end
+
+struct Commands
+    field varvalue{list} commands
+    field varvalue{string} extended
+end

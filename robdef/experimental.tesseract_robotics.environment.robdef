@@ -1,0 +1,43 @@
+service experimental.tesseract_robotics.environment
+
+stdver 0.10
+
+import com.robotraconteur.geometry
+import com.robotraconteur.geometry.shapes
+import experimental.tesseract_robotics.scene_graph
+import experimental.tesseract_robotics.environment.commands
+
+using com.robotraconteur.geometry.Pose
+using com.robotraconteur.geometry.NamedPose
+using com.robotraconteur.geometry.SpatialInertia
+using com.robotraconteur.geometry.Vector3
+using com.robotraconteur.geometry.shapes.Material
+using experimental.tesseract_robotics.scene_graph.Joint
+using experimental.tesseract_robotics.scene_graph.Link
+using experimental.tesseract_robotics.environment.commands.Commands
+
+struct EnvironmentInfo
+    field string name
+
+    #TODO: Add more fields
+    field varvalue{string} extended
+end
+
+object Environment
+    property string name [readonly]
+
+    property string{list} joint_names [readonly]
+    property string{list} link_names [readonly]
+
+    function Joint getf_joint(string joint_name)
+    function Link getf_link(string link_name)
+
+    # function double[] getf_current_joint_values(string{list} joint_names)
+    # function void setf_state(string{list} joint_names, double[] joint_values, NamedPose{list} transforms)
+    
+    function int32 apply_command(varvalue command)
+    function int32 apply_commands(Commands command)
+    function Commands getf_command_history()
+    pipe Commands applied_commands [readonly]
+
+end

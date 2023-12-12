@@ -1,0 +1,30 @@
+service experimental.tesseract_robotics.common
+
+stdver 0.10
+
+import com.robotraconteur.geometry
+
+using com.robotraconteur.geometry.Transform
+
+struct ManipulatorInfo
+    field string manipulator
+    field string working_frame
+    field string tcp_frame
+    field Transform tcp_offset
+    field string manipulator_ik_solver
+    field varvalue{string} extended
+end
+
+struct JointState
+    field string{list} joint_names
+    field double[] position
+    field double[] velocity
+    field double[] acceleration
+    field double[] effort
+    field double time
+end
+
+struct JointTrajectory
+    field JointState{list} states
+    field string description
+end

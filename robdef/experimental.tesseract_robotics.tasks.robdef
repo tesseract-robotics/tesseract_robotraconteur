@@ -1,0 +1,47 @@
+service experimental.tesseract_robotics.tasks
+
+stdver 0.10
+
+import com.robotraconteur.action
+
+using com.robotraconteur.action.ActionStatusCode
+
+struct TaskPipelineInfo
+    field string name
+    field string{list} input_keys
+    field string{list} output_keys
+    #TODO: Add more fields
+    field varvalue{string} extended
+end
+
+struct TaskExecutorInfo
+    field string name
+    #TODO: Add more fields
+    field varvalue{string} extended
+end
+
+struct TaskComposerProblem
+    field string name
+    field varvalue input
+    field varvalue{string} extended
+end
+
+struct TaskExecutorInput
+    field string pipeline_name
+    field varvalue problem
+    field varvalue{string} data_storage
+    field varvalue{string} extended
+end
+
+struct TaskExecutorStatus
+    field ActionStatusCode action_status
+    field varvalue{string} data_storage
+    field varvalue{string} extended
+end
+
+object TaskExecutor
+    property string name [readonly]
+    property int32 worker_count [readonly]
+    property int32 task_count [readonly]
+    function TaskExecutorStatus{generator} run(TaskExecutorInput input)
+end

@@ -1,0 +1,94 @@
+service experimental.tesseract_robotics.scene_graph
+
+stdver 0.10
+
+import com.robotraconteur.geometry
+import com.robotraconteur.geometry.shapes
+
+using com.robotraconteur.geometry.Pose
+using com.robotraconteur.geometry.NamedPose
+using com.robotraconteur.geometry.SpatialInertia
+using com.robotraconteur.geometry.Vector3
+using com.robotraconteur.geometry.shapes.Material
+
+enum JointType
+  unknown=0,
+  revolute,
+  continuous,
+  prismatic,
+  floating,
+  planar,
+  fixed
+end
+
+struct Visual
+    field string name
+    field Pose origin
+    field varvalue geometry
+    field Material material
+end
+
+struct Collision
+    field string name
+    field Pose origin
+    field varvalue geometry
+end
+
+struct JointDynamics
+    field double damping
+    field double friction
+end
+
+struct JointLimits
+    field double lower
+    field double upper
+    field double effort
+    field double velocity
+    field double acceleration
+end
+
+struct JointSafety
+    field double soft_upper_limit
+    field double soft_lower_limit
+    field double k_position
+    field double k_velocity
+end
+
+struct JointCalibration
+    field double reference_position
+    field double rising
+    field double falling
+end
+
+struct JointMimic
+    field double offset
+    field double multiplier
+    field string joint_name
+end
+
+struct Joint
+    field string name
+    field JointType joint_type
+    field Vector3 axis
+    field string child_link_name
+    field string parent_link_name
+    field Pose parent_to_joint_origin_transform
+    field JointDynamics dynamics
+    field JointLimits limits
+    field JointSafety safety
+    field JointCalibration calibration
+    field JointMimic mimic
+end
+
+struct Link
+    field string name
+    field SpatialInertia inertial
+    field Visual{list} visual
+    field Collision{list} collision
+end
+
+struct SceneGraph
+    field string name
+    field Link{list} links
+    field Joint{list} joints
+end

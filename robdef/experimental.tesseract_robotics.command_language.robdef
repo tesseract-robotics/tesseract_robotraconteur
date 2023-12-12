@@ -1,0 +1,80 @@
+service experimental.tesseract_robotics.command_language
+
+stdver 0.10
+
+import com.robotraconteur.uuid
+import com.robotraconteur.geometry
+import experimental.tesseract_robotics.common
+
+using com.robotraconteur.uuid.UUID
+using com.robotraconteur.geometry.Transform
+using experimental.tesseract_robotics.common.ManipulatorInfo
+using experimental.tesseract_robotics.common.JointState
+
+enum MoveInstructionType
+    linear = 0,
+    freespace = 1,
+    circular = 2
+end
+
+enum CompositeInstructionOrder
+    ordered = 0,
+    unordered = 1,
+    ordered_and_reversible = 2
+end
+
+struct JointWaypoint
+    field string{list} names
+    field double[] position
+    field double[] upper_tolerance
+    field double[] lower_tolerance
+    field bool is_constrained
+    field string name
+    field varvalue{string} extended
+end
+
+struct CartesianWaypoint
+    field Transform transform
+    field double[] upper_tolerance
+    field double[] lower_tolerance
+    field JointState seed
+    field string name
+    field varvalue{string} extended
+end
+
+struct StateWaypoint
+    field string{list} joint_names
+    field double[] position
+    field double[] velocity
+    field double[] acceleration
+    field double[] effort
+    field double time
+    field string name
+    field varvalue{string} extended
+end
+
+struct MoveInstruction
+    field UUID uuid
+    field UUID parent_uuid
+    field varvalue waypoint
+    field ManipulatorInfo manipulator_info
+    field string profile
+    field string path_profile
+    field string{string} profile_overrides
+    field string{string} path_profile_overrides
+    field MoveInstructionType move_type
+    field string description
+    field varvalue{string} extended
+end
+
+struct CompositeInstruction
+    field CompositeInstructionOrder order
+    field UUID uuid
+    field UUID parent_uuid
+    field string description
+    field string profile
+    field string{string} profile_overrides
+    field ManipulatorInfo manipulator_info
+    field varvalue{list} instructions
+    field varvalue{string} extended
+end

@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>tesseract_robotraconteur</name>
+  <version>0.3.0</version>
+  <description>The tesseract_robotraconteur package</description>
+
+  <maintainer email="wason@wasontech.com">John Wason</maintainer>
+
+  <license>Apache 2.0</license>
+
+  <url type="website">https://github.com/robotraconteur-contrib/tesseract_robotraconteur</url>
+
+
+  <author email="wason@wasontech.com">John Wason</author>
+
+  <depend>robotraconteur</depend>
+  <depend>robotraconteur_companion</depend>
+  <depend>tesseract</depend>
+  <depend>tesseract_visualization</depend>
+  <depend>tesseract_collision</depend>
+  <depend>tesseract_urdf</depend>
+  <depend>tesseract_motion_planners</depend>
+  <depend>tesseract_task_composer</depend>
+  <depend>octomap</depend>
+  <depend>drekar_launch_process_cpp</depend>
+
+  <export>    
+    <build_type>cmake</build_type>
+  </export>
+</package>
