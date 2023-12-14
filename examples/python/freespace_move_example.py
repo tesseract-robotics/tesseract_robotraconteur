@@ -13,7 +13,7 @@
 #  export TESSERACT_RESOURCE_PATH=/ws/install/share
 #  tesseract_robotraconteur_service --urdf-file=/ws/install/share/tesseract_support/urdf/abb_irb2400.urdf \
 #     --srdf-file=/ws/install/share/tesseract_support/urdf/abb_irb2400.srdf \
-#     --task-plugin-config-file=${workspaceFolder}/ws/devel/share/tesseract_task_composer/config/task_composer_plugins.yaml
+#     --task-plugin-config-file=/ws/devel/share/tesseract_task_composer/config/task_composer_plugins.yaml
 #
 # Once the service is running, the client can be run from another terminal. The robotraconteur and 
 # robotraconteurcomanion python packages must be installed. Install using the following commands:
