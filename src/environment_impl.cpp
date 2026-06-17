@@ -24,8 +24,9 @@
 #include "tesseract_robotraconteur/environment_impl.h"
 
 #include "tesseract_robotraconteur/conv/environment_commands_conv.h"
+#include <tesseract/environment/events.h>
 
-// NOTE: tesseract_environment::Environment is thread safe. Locks are not needed here.
+// NOTE: tesseract::environment::Environment is thread safe. Locks are not needed here.
 
 namespace RR=RobotRaconteur;
 namespace rr_env_cmds = experimental::tesseract_robotics::environment::commands;
@@ -33,21 +34,21 @@ namespace rr_env_cmds = experimental::tesseract_robotics::environment::commands;
 namespace tesseract_robotraconteur
 {
 
-    static void EnvironmentImpl_send_applied_commands(const RR::PipeBroadcasterPtr<rr_env_cmds::CommandsPtr>& broadcaster, const tesseract_environment::Event& event)
+    static void EnvironmentImpl_send_applied_commands(const RR::PipeBroadcasterPtr<rr_env_cmds::CommandsPtr>& broadcaster, const tesseract::environment::Event& event)
     {   
         if (!broadcaster)
         {
             return;
         }
 
-        if (event.type != tesseract_environment::Events::COMMAND_APPLIED)
+        if (event.type != tesseract::environment::Events::COMMAND_APPLIED)
         {
             return;
         }
 
         try
             {
-            auto command_applied_event = static_cast<const tesseract_environment::CommandAppliedEvent*>(&event);
+            auto command_applied_event = static_cast<const tesseract::environment::CommandAppliedEvent*>(&event);
                         
             auto rr_commands = environment_conv::CommandsToRR(command_applied_event->commands);
 
@@ -60,14 +61,14 @@ namespace tesseract_robotraconteur
 
     }
     
-    EnvironmentImpl::EnvironmentImpl(tesseract_environment::Environment::Ptr env, RR_SHARED_PTR<TesseractRoboticsImpl> parent)
+    EnvironmentImpl::EnvironmentImpl(tesseract::environment::Environment::Ptr env, RR_SHARED_PTR<TesseractRoboticsImpl> parent)
         : env_(env), parent_(parent)
     {}
 
     void EnvironmentImpl::Init()
     {
         std::weak_ptr<EnvironmentImpl> weak_this = shared_from_this();
-        env_->addEventCallback(123, [weak_this](const tesseract_environment::Event& event) {
+        env_->addEventCallback(123, [weak_this](const tesseract::environment::Event& event) {
             auto shared_this = weak_this.lock();
             if (!shared_this)
             {
@@ -125,5 +126,5 @@ namespace tesseract_robotraconteur
         return environment_conv::CommandsToRR(commands);
     }
 
-    tesseract_environment::Environment::Ptr EnvironmentImpl::Environment() const { return env_; }
+    tesseract::environment::Environment::Ptr EnvironmentImpl::Environment() const { return env_; }
 } // namespace tesseract_robotraconteur

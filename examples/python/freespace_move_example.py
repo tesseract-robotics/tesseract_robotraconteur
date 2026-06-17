@@ -2,18 +2,18 @@
 #
 # This is an example client program showing how to use the Tesseract
 # service with Robot Raconteur. It expects the abb_irb2400 example
-# scene from tesseract_support package to be loaded into the service.
+# scene from tesseract/support package to be loaded into the service.
 #
 # The service should be started prior to running this program. The service
 # can be started using the docker image or from the command line.
 # See the readme for instructions on how to start the service
 # using the docker image. From the command line, use the following command.
-# Adjust /ws/install/share/tesseract_support to the location of the tesseract_support.
+# Adjust /ws/install/share/tesseract/support to the location of the tesseract/support.
 #
 #  export TESSERACT_RESOURCE_PATH=/ws/install/share
-#  tesseract_robotraconteur_service --urdf-file=/ws/install/share/tesseract_support/urdf/abb_irb2400.urdf \
-#     --srdf-file=/ws/install/share/tesseract_support/urdf/abb_irb2400.srdf \
-#     --task-plugin-config-file=/ws/devel/share/tesseract_task_composer/config/task_composer_plugins.yaml
+#  tesseract_robotraconteur_service --urdf-file=/ws/install/share/tesseract/support/urdf/abb_irb2400.urdf \
+#     --srdf-file=/ws/install/share/tesseract/support/urdf/abb_irb2400.srdf \
+#     --task-plugin-config-file=/ws/install/share/tesseract_planning/task_composer/config/task_composer_plugins.yaml
 #
 # Once the service is running, the client can be run from another terminal. The robotraconteur and 
 # robotraconteurcomanion python packages must be installed. Install using the following commands:
@@ -64,18 +64,24 @@ def main():
     move_instr_type = RRN.GetStructureType("experimental.tesseract_robotics.command_language.MoveInstruction",c)
     composite_instr_type = RRN.GetStructureType("experimental.tesseract_robotics.command_language.CompositeInstruction",c)
     manip_info_type = RRN.GetStructureType("experimental.tesseract_robotics.common.ManipulatorInfo",c)
-    planning_problem_type = RRN.GetStructureType("experimental.tesseract_robotics.tasks.planning.PlanningTaskComposerProblem",c)
     task_exec_input_type = RRN.GetStructureType("experimental.tesseract_robotics.tasks.TaskExecutorInput",c)
+    env_handle_type = RRN.GetStructureType("experimental.tesseract_robotics.environment.EnvironmentHandle",c)
 
     # Get the available task pipeline information from the service. Tesseract task pipelines
     # execute planning and other operations
-    task_info = c.task_pipelines_info
-    output_key = task_info["FreespacePipeline"].output_keys[0]
+    task_info = c.tasks_info
+    output_key = task_info["FreespacePipeline"].output_keys["program"].keys.data
+    input_key = task_info["FreespacePipeline"].input_keys["planning_input"].keys.data
 
     # Create the environment. In this case, the environment is loaded from the service. The
     # available environments are specified when the service is started. "default" is the
     # default environment.
     c.load_environment("default", "env")
+
+    # Create the EnvironmentHandle to pass to the planner
+    env_handle = env_handle_type()
+    env_handle.name = "env"
+    env_handle_input = RR.VarValue(env_handle, "experimental.tesseract_robotics.environment.EnvironmentHandle")
 
     # Helper function to make a Move instruction
     def build_move_instr(xyz, rpy):
@@ -108,24 +114,23 @@ def main():
     composite.instructions = [instr1, instr2] #, instr3]
     composite.manipulator_info = manip_info
     composite.uuid = uuid_util.NewRandomUuid()
+    composite_input = RR.VarValue(composite, "experimental.tesseract_robotics.command_language.CompositeInstruction")
 
-    # Create and configure the planning problem
-    problem = planning_problem_type()
-    problem.name = "example"
-    problem.input = RR.VarValue(composite, "experimental.tesseract_robotics.command_language.CompositeInstruction")
-    problem.environment_name = "env"
-    problem.manip_info = manip_info
+    # Find first executor
+    executors_info = c.task_executors_info
+    default_task_executor = next(iter(executors_info.values())).name
 
-    # Get the default task executor. In this case, the task executor will be using Taskflow
-    # to execute the pipeline
-    executor = c.get_task_executors("default")
+    # Get the taskflow task executor
+    executor = c.get_task_executors(default_task_executor)
 
     # Create the task executor input and set the pipeline name. In this case, we are using
     # the FreespacePipeline. Other pipelines are available. These pipelines are configured
     # when the service is started.
     exec_input = task_exec_input_type()
-    exec_input.pipeline_name = "FreespacePipeline"
-    exec_input.problem = RR.VarValue(problem, "experimental.tesseract_robotics.tasks.planning.PlanningTaskComposerProblem")
+    exec_input.task_name = "FreespacePipeline"
+    exec_input.data_storage = {}
+    exec_input.data_storage["environment"] = env_handle_input
+    exec_input.data_storage[input_key] = composite_input
 
     # Run the pipeline
     exec_gen = executor.run(exec_input)
@@ -158,11 +163,5 @@ def main():
 
     # TODO: plot result in viewer!
         
-
-
-
-
-
-
 if __name__ == '__main__':
     main()

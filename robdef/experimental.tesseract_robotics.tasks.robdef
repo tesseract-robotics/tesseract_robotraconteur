@@ -6,11 +6,16 @@ import com.robotraconteur.action
 
 using com.robotraconteur.action.ActionStatusCode
 
-struct TaskPipelineInfo
+struct TaskComposerKey
+    field string port
+    field varvalue keys
+end
+
+struct TaskComposerTaskInfo
     field string name
-    field string{list} input_keys
-    field string{list} output_keys
-    #TODO: Add more fields
+    field string uuid
+    field TaskComposerKey{string} input_keys
+    field TaskComposerKey{string} output_keys
     field varvalue{string} extended
 end
 
@@ -20,15 +25,8 @@ struct TaskExecutorInfo
     field varvalue{string} extended
 end
 
-struct TaskComposerProblem
-    field string name
-    field varvalue input
-    field varvalue{string} extended
-end
-
 struct TaskExecutorInput
-    field string pipeline_name
-    field varvalue problem
+    field string task_name
     field varvalue{string} data_storage
     field varvalue{string} extended
 end

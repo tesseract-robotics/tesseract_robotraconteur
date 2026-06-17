@@ -44,16 +44,16 @@ namespace environment_conv
 //     field int32 command_id
 // end
 
-rr_env_cmd::AddContactManagersPluginInfoCommandPtr AddContactManagersPluginInfoCommandToRR(const tesseract_environment::AddContactManagersPluginInfoCommand::ConstPtr& cmd)
+rr_env_cmd::AddContactManagersPluginInfoCommandPtr AddContactManagersPluginInfoCommandToRR(const tesseract::environment::AddContactManagersPluginInfoCommand::ConstPtr& cmd)
 {
     rr_env_cmd::AddContactManagersPluginInfoCommandPtr rr_cmd(new rr_env_cmd::AddContactManagersPluginInfoCommand());
     return rr_cmd;
 }
 
-tesseract_environment::AddContactManagersPluginInfoCommand::Ptr AddContactManagersPluginInfoCommandFromRR(const rr_env_cmd::AddContactManagersPluginInfoCommandPtr& cmd)
+tesseract::environment::AddContactManagersPluginInfoCommand::Ptr AddContactManagersPluginInfoCommandFromRR(const rr_env_cmd::AddContactManagersPluginInfoCommandPtr& cmd)
 {
     RR_NULL_CHECK(cmd);
-    auto ret = std::make_shared<tesseract_environment::AddContactManagersPluginInfoCommand>();
+    auto ret = std::make_shared<tesseract::environment::AddContactManagersPluginInfoCommand>();
     return ret;
 }
 
@@ -62,16 +62,16 @@ tesseract_environment::AddContactManagersPluginInfoCommand::Ptr AddContactManage
 //     field int32 noop
 // end
 
-rr_env_cmd::AddKinematicsInformationCommandPtr AddKinematicsInformationCommandToRR(const tesseract_environment::AddKinematicsInformationCommand::ConstPtr& cmd)
+rr_env_cmd::AddKinematicsInformationCommandPtr AddKinematicsInformationCommandToRR(const tesseract::environment::AddKinematicsInformationCommand::ConstPtr& cmd)
 {
     rr_env_cmd::AddKinematicsInformationCommandPtr rr_cmd(new rr_env_cmd::AddKinematicsInformationCommand());
     return rr_cmd;
 }
 
-tesseract_environment::AddKinematicsInformationCommand::Ptr AddKinematicsInformationCommandFromRR(const rr_env_cmd::AddKinematicsInformationCommandPtr& cmd)
+tesseract::environment::AddKinematicsInformationCommand::Ptr AddKinematicsInformationCommandFromRR(const rr_env_cmd::AddKinematicsInformationCommandPtr& cmd)
 {
     RR_NULL_CHECK(cmd);
-    auto ret = std::make_shared<tesseract_environment::AddKinematicsInformationCommand>();
+    auto ret = std::make_shared<tesseract::environment::AddKinematicsInformationCommand>();
     return ret;
 }
 
@@ -81,7 +81,7 @@ tesseract_environment::AddKinematicsInformationCommand::Ptr AddKinematicsInforma
 //     field bool replace_allowed
 // end
 
-rr_env_cmd::AddLinkCommandPtr AddLinkCommandToRR(const tesseract_environment::AddLinkCommand::ConstPtr& cmd)
+rr_env_cmd::AddLinkCommandPtr AddLinkCommandToRR(const tesseract::environment::AddLinkCommand::ConstPtr& cmd)
 {
     rr_env_cmd::AddLinkCommandPtr rr_cmd(new rr_env_cmd::AddLinkCommand());
     rr_cmd->link = LinkToRR(cmd->getLink());
@@ -90,13 +90,13 @@ rr_env_cmd::AddLinkCommandPtr AddLinkCommandToRR(const tesseract_environment::Ad
     return rr_cmd;
 }
 
-tesseract_environment::AddLinkCommand::Ptr AddLinkCommandFromRR(const rr_env_cmd::AddLinkCommandPtr& cmd)
+tesseract::environment::AddLinkCommand::Ptr AddLinkCommandFromRR(const rr_env_cmd::AddLinkCommandPtr& cmd)
 {
     RR_NULL_CHECK(cmd);
     auto link = LinkFromRR(cmd->link);
     auto joint = JointFromRR(cmd->joint);
     bool replace_allowed = cmd->replace_allowed.value != 0;
-    return std::make_shared<tesseract_environment::AddLinkCommand>(*link, *joint, replace_allowed);
+    return std::make_shared<tesseract::environment::AddLinkCommand>(*link, *joint, replace_allowed);
 }
 
 // struct AddSceneGraphCommand
@@ -106,7 +106,7 @@ tesseract_environment::AddLinkCommand::Ptr AddLinkCommandFromRR(const rr_env_cmd
 //     field string prefix
 // end
 
-rr_env_cmd::AddSceneGraphCommandPtr AddSceneGraphCommandToRR(const tesseract_environment::AddSceneGraphCommand::ConstPtr& cmd)
+rr_env_cmd::AddSceneGraphCommandPtr AddSceneGraphCommandToRR(const tesseract::environment::AddSceneGraphCommand::ConstPtr& cmd)
 {
     rr_env_cmd::AddSceneGraphCommandPtr rr_cmd(new rr_env_cmd::AddSceneGraphCommand());
     rr_cmd->scene_graph = SceneGraphToRR(cmd->getSceneGraph());
@@ -118,19 +118,19 @@ rr_env_cmd::AddSceneGraphCommandPtr AddSceneGraphCommandToRR(const tesseract_env
     return rr_cmd;
 }
 
-tesseract_environment::AddSceneGraphCommand::Ptr AddSceneGraphCommandFromRR(const rr_env_cmd::AddSceneGraphCommandPtr& cmd)
+tesseract::environment::AddSceneGraphCommand::Ptr AddSceneGraphCommandFromRR(const rr_env_cmd::AddSceneGraphCommandPtr& cmd)
 {
     RR_NULL_CHECK(cmd);
-    std::vector<tesseract_scene_graph::Link::Ptr> links;
+    std::vector<tesseract::scene_graph::Link::Ptr> links;
     RR_NULL_CHECK(cmd->scene_graph);
-    tesseract_scene_graph::SceneGraph::Ptr graph = SceneGraphFromRR(cmd->scene_graph);
+    tesseract::scene_graph::SceneGraph::Ptr graph = SceneGraphFromRR(cmd->scene_graph);
    
-    tesseract_scene_graph::Joint::Ptr joint;
+    tesseract::scene_graph::Joint::Ptr joint;
     if (cmd->joint)
     {
         joint = JointFromRR(cmd->joint);
     }
-    auto ret = std::make_shared<tesseract_environment::AddSceneGraphCommand>(*graph, *joint, cmd->prefix);
+    auto ret = std::make_shared<tesseract::environment::AddSceneGraphCommand>(*graph, *joint, cmd->prefix);
     return ret;
 }
 
@@ -139,16 +139,16 @@ tesseract_environment::AddSceneGraphCommand::Ptr AddSceneGraphCommandFromRR(cons
 //     field int32 noop
 // end
 
-rr_env_cmd::AddTrajectoryLinkCommandPtr AddTrajectoryLinkCommandToRR(const tesseract_environment::AddTrajectoryLinkCommand::ConstPtr& cmd)
+rr_env_cmd::AddTrajectoryLinkCommandPtr AddTrajectoryLinkCommandToRR(const tesseract::environment::AddTrajectoryLinkCommand::ConstPtr& cmd)
 {
     rr_env_cmd::AddTrajectoryLinkCommandPtr rr_cmd(new rr_env_cmd::AddTrajectoryLinkCommand());
     return rr_cmd;
 }
 
-tesseract_environment::AddTrajectoryLinkCommand::Ptr AddTrajectoryLinkCommandFromRR(const rr_env_cmd::AddTrajectoryLinkCommandPtr& cmd)
+tesseract::environment::AddTrajectoryLinkCommand::Ptr AddTrajectoryLinkCommandFromRR(const rr_env_cmd::AddTrajectoryLinkCommandPtr& cmd)
 {
     RR_NULL_CHECK(cmd);
-    auto ret = std::make_shared<tesseract_environment::AddTrajectoryLinkCommand>();
+    auto ret = std::make_shared<tesseract::environment::AddTrajectoryLinkCommand>();
     return ret;
 }
 
@@ -157,16 +157,16 @@ tesseract_environment::AddTrajectoryLinkCommand::Ptr AddTrajectoryLinkCommandFro
 //     field int32 noop
 // end
     
-rr_env_cmd::ChangeCollisionMarginsCommandPtr ChangeCollisionMarginsCommandToRR(const tesseract_environment::ChangeCollisionMarginsCommand::ConstPtr& cmd)
+rr_env_cmd::ChangeCollisionMarginsCommandPtr ChangeCollisionMarginsCommandToRR(const tesseract::environment::ChangeCollisionMarginsCommand::ConstPtr& cmd)
 {
     rr_env_cmd::ChangeCollisionMarginsCommandPtr rr_cmd(new rr_env_cmd::ChangeCollisionMarginsCommand());
     return rr_cmd;
 }
 
-tesseract_environment::ChangeCollisionMarginsCommand::Ptr ChangeCollisionMarginsCommandFromRR(const rr_env_cmd::ChangeCollisionMarginsCommandPtr& cmd)
+tesseract::environment::ChangeCollisionMarginsCommand::Ptr ChangeCollisionMarginsCommandFromRR(const rr_env_cmd::ChangeCollisionMarginsCommandPtr& cmd)
 {
     RR_NULL_CHECK(cmd);
-    auto ret = std::make_shared<tesseract_environment::ChangeCollisionMarginsCommand>();
+    auto ret = std::make_shared<tesseract::environment::ChangeCollisionMarginsCommand>();
     return ret;
 }
 
@@ -174,7 +174,7 @@ tesseract_environment::ChangeCollisionMarginsCommand::Ptr ChangeCollisionMargins
 //     field double{string} limits
 // end
 
-rr_env_cmd::ChangeJointAccelerationLimitsCommandPtr ChangeJointAccelerationLimitsCommandToRR(const tesseract_environment::ChangeJointAccelerationLimitsCommand::ConstPtr& cmd)
+rr_env_cmd::ChangeJointAccelerationLimitsCommandPtr ChangeJointAccelerationLimitsCommandToRR(const tesseract::environment::ChangeJointAccelerationLimitsCommand::ConstPtr& cmd)
 {
     rr_env_cmd::ChangeJointAccelerationLimitsCommandPtr rr_cmd(new rr_env_cmd::ChangeJointAccelerationLimitsCommand());
     rr_cmd->limits = RR::AllocateEmptyRRMap<std::string, RR::RRArray<double>>();
@@ -185,7 +185,7 @@ rr_env_cmd::ChangeJointAccelerationLimitsCommandPtr ChangeJointAccelerationLimit
     return rr_cmd;
 }
 
-tesseract_environment::ChangeJointAccelerationLimitsCommand::Ptr ChangeJointAccelerationLimitsCommandFromRR(const rr_env_cmd::ChangeJointAccelerationLimitsCommandPtr& cmd)
+tesseract::environment::ChangeJointAccelerationLimitsCommand::Ptr ChangeJointAccelerationLimitsCommandFromRR(const rr_env_cmd::ChangeJointAccelerationLimitsCommandPtr& cmd)
 {
     RR_NULL_CHECK(cmd);
     std::unordered_map<std::string, double> limits;
@@ -194,7 +194,7 @@ tesseract_environment::ChangeJointAccelerationLimitsCommand::Ptr ChangeJointAcce
     {
         limits.insert(std::make_pair(limit.first, RR::RRArrayToScalar<double>(limit.second)));
     }
-    auto ret = std::make_shared<tesseract_environment::ChangeJointAccelerationLimitsCommand>(limits);   
+    auto ret = std::make_shared<tesseract::environment::ChangeJointAccelerationLimitsCommand>(limits);   
     return ret;
 }
 
@@ -203,7 +203,7 @@ tesseract_environment::ChangeJointAccelerationLimitsCommand::Ptr ChangeJointAcce
 //     field Pose origin
 // end
 
-rr_env_cmd::ChangeJointOriginCommandPtr ChangeJointOriginCommandToRR(const tesseract_environment::ChangeJointOriginCommand::ConstPtr& cmd)
+rr_env_cmd::ChangeJointOriginCommandPtr ChangeJointOriginCommandToRR(const tesseract::environment::ChangeJointOriginCommand::ConstPtr& cmd)
 {
     rr_env_cmd::ChangeJointOriginCommandPtr rr_cmd(new rr_env_cmd::ChangeJointOriginCommand());
     rr_cmd->joint_name = cmd->getJointName();
@@ -211,10 +211,10 @@ rr_env_cmd::ChangeJointOriginCommandPtr ChangeJointOriginCommandToRR(const tesse
     return rr_cmd;
 }
 
-tesseract_environment::ChangeJointOriginCommand::Ptr ChangeJointOriginCommandFromRR(const rr_env_cmd::ChangeJointOriginCommandPtr& cmd)
+tesseract::environment::ChangeJointOriginCommand::Ptr ChangeJointOriginCommandFromRR(const rr_env_cmd::ChangeJointOriginCommandPtr& cmd)
 {
     RR_NULL_CHECK(cmd);
-    auto ret = std::make_shared<tesseract_environment::ChangeJointOriginCommand>(cmd->joint_name, RRC_Eigen::ToIsometry(cmd->origin));
+    auto ret = std::make_shared<tesseract::environment::ChangeJointOriginCommand>(cmd->joint_name, RRC_Eigen::ToIsometry(cmd->origin));
     return ret;
 }
 
@@ -222,7 +222,7 @@ tesseract_environment::ChangeJointOriginCommand::Ptr ChangeJointOriginCommandFro
 //     field double[2]{string} limits
 // end
 
-rr_env_cmd::ChangeJointPositionLimitsCommandPtr ChangeJointPositionLimitsCommandToRR(const tesseract_environment::ChangeJointPositionLimitsCommand::ConstPtr& cmd)
+rr_env_cmd::ChangeJointPositionLimitsCommandPtr ChangeJointPositionLimitsCommandToRR(const tesseract::environment::ChangeJointPositionLimitsCommand::ConstPtr& cmd)
 {
     rr_env_cmd::ChangeJointPositionLimitsCommandPtr rr_cmd(new rr_env_cmd::ChangeJointPositionLimitsCommand());
     rr_cmd->limits = RR::AllocateEmptyRRMap<std::string, RR::RRArray<double>>();
@@ -236,7 +236,7 @@ rr_env_cmd::ChangeJointPositionLimitsCommandPtr ChangeJointPositionLimitsCommand
     return rr_cmd;
 }
 
-tesseract_environment::ChangeJointPositionLimitsCommand::Ptr ChangeJointPositionLimitsCommandFromRR(const rr_env_cmd::ChangeJointPositionLimitsCommandPtr& cmd)
+tesseract::environment::ChangeJointPositionLimitsCommand::Ptr ChangeJointPositionLimitsCommandFromRR(const rr_env_cmd::ChangeJointPositionLimitsCommandPtr& cmd)
 {
     RR_NULL_CHECK(cmd);
     std::unordered_map<std::string, std::pair<double, double>> limits;
@@ -245,7 +245,7 @@ tesseract_environment::ChangeJointPositionLimitsCommand::Ptr ChangeJointPosition
     {
         limits.insert(std::make_pair(limit.first, std::make_pair(limit.second->at(0), limit.second->at(1))));
     }
-    auto ret = std::make_shared<tesseract_environment::ChangeJointPositionLimitsCommand>(limits);   
+    auto ret = std::make_shared<tesseract::environment::ChangeJointPositionLimitsCommand>(limits);   
     return ret;
 }
 
@@ -253,7 +253,7 @@ tesseract_environment::ChangeJointPositionLimitsCommand::Ptr ChangeJointPosition
 //     field double{string} limits
 // end
 
-rr_env_cmd::ChangeJointVelocityLimitsCommandPtr ChangeJointVelocityLimitsCommandToRR(const tesseract_environment::ChangeJointVelocityLimitsCommand::ConstPtr& cmd)
+rr_env_cmd::ChangeJointVelocityLimitsCommandPtr ChangeJointVelocityLimitsCommandToRR(const tesseract::environment::ChangeJointVelocityLimitsCommand::ConstPtr& cmd)
 {
     rr_env_cmd::ChangeJointVelocityLimitsCommandPtr rr_cmd(new rr_env_cmd::ChangeJointVelocityLimitsCommand());
     rr_cmd->limits = RR::AllocateEmptyRRMap<std::string, RR::RRArray<double>>();
@@ -264,7 +264,7 @@ rr_env_cmd::ChangeJointVelocityLimitsCommandPtr ChangeJointVelocityLimitsCommand
     return rr_cmd;
 }
 
-tesseract_environment::ChangeJointVelocityLimitsCommand::Ptr ChangeJointVelocityLimitsCommandFromRR(const rr_env_cmd::ChangeJointVelocityLimitsCommandPtr& cmd)
+tesseract::environment::ChangeJointVelocityLimitsCommand::Ptr ChangeJointVelocityLimitsCommandFromRR(const rr_env_cmd::ChangeJointVelocityLimitsCommandPtr& cmd)
 {
     RR_NULL_CHECK(cmd);
     std::unordered_map<std::string, double> limits;
@@ -273,7 +273,7 @@ tesseract_environment::ChangeJointVelocityLimitsCommand::Ptr ChangeJointVelocity
     {
         limits.insert(std::make_pair(limit.first, RR::RRArrayToScalar<double>(limit.second)));
     }
-    auto ret = std::make_shared<tesseract_environment::ChangeJointVelocityLimitsCommand>(limits);   
+    auto ret = std::make_shared<tesseract::environment::ChangeJointVelocityLimitsCommand>(limits);   
     return ret;
 }
 
@@ -282,7 +282,7 @@ tesseract_environment::ChangeJointVelocityLimitsCommand::Ptr ChangeJointVelocity
 //     field bool enabled
 // end
 
-rr_env_cmd::ChangeLinkCollisionEnabledCommandPtr ChangeLinkCollisionEnabledCommandToRR(const tesseract_environment::ChangeLinkCollisionEnabledCommand::ConstPtr& cmd)
+rr_env_cmd::ChangeLinkCollisionEnabledCommandPtr ChangeLinkCollisionEnabledCommandToRR(const tesseract::environment::ChangeLinkCollisionEnabledCommand::ConstPtr& cmd)
 {
     rr_env_cmd::ChangeLinkCollisionEnabledCommandPtr rr_cmd(new rr_env_cmd::ChangeLinkCollisionEnabledCommand());
     rr_cmd->link_name = cmd->getLinkName();
@@ -290,10 +290,10 @@ rr_env_cmd::ChangeLinkCollisionEnabledCommandPtr ChangeLinkCollisionEnabledComma
     return rr_cmd;
 }
 
-tesseract_environment::ChangeLinkCollisionEnabledCommand::Ptr ChangeLinkCollisionEnabledCommandFromRR(const rr_env_cmd::ChangeLinkCollisionEnabledCommandPtr& cmd)
+tesseract::environment::ChangeLinkCollisionEnabledCommand::Ptr ChangeLinkCollisionEnabledCommandFromRR(const rr_env_cmd::ChangeLinkCollisionEnabledCommandPtr& cmd)
 {
     RR_NULL_CHECK(cmd);
-    auto ret = std::make_shared<tesseract_environment::ChangeLinkCollisionEnabledCommand>(cmd->link_name, cmd->enabled.value != 0);   
+    auto ret = std::make_shared<tesseract::environment::ChangeLinkCollisionEnabledCommand>(cmd->link_name, cmd->enabled.value != 0);   
     return ret;
 }
 
@@ -302,7 +302,7 @@ tesseract_environment::ChangeLinkCollisionEnabledCommand::Ptr ChangeLinkCollisio
 //     field Pose origin
 // end
 
-rr_env_cmd::ChangeLinkOriginCommandPtr ChangeLinkOriginCommandToRR(const tesseract_environment::ChangeLinkOriginCommand::ConstPtr& cmd)
+rr_env_cmd::ChangeLinkOriginCommandPtr ChangeLinkOriginCommandToRR(const tesseract::environment::ChangeLinkOriginCommand::ConstPtr& cmd)
 {
     rr_env_cmd::ChangeLinkOriginCommandPtr rr_cmd(new rr_env_cmd::ChangeLinkOriginCommand());
     rr_cmd->link_name = cmd->getLinkName();
@@ -310,10 +310,10 @@ rr_env_cmd::ChangeLinkOriginCommandPtr ChangeLinkOriginCommandToRR(const tessera
     return rr_cmd;
 }
 
-tesseract_environment::ChangeLinkOriginCommand::Ptr ChangeLinkOriginCommandFromRR(const rr_env_cmd::ChangeLinkOriginCommandPtr& cmd)
+tesseract::environment::ChangeLinkOriginCommand::Ptr ChangeLinkOriginCommandFromRR(const rr_env_cmd::ChangeLinkOriginCommandPtr& cmd)
 {
     RR_NULL_CHECK(cmd);
-    auto ret = std::make_shared<tesseract_environment::ChangeLinkOriginCommand>(cmd->link_name, RRC_Eigen::ToIsometry(cmd->origin));
+    auto ret = std::make_shared<tesseract::environment::ChangeLinkOriginCommand>(cmd->link_name, RRC_Eigen::ToIsometry(cmd->origin));
     return ret;
 }
 
@@ -322,7 +322,7 @@ tesseract_environment::ChangeLinkOriginCommand::Ptr ChangeLinkOriginCommandFromR
 //     field bool visible
 // end
 
-rr_env_cmd::ChangeLinkVisibilityCommandPtr ChangeLinkVisibilityCommandToRR(const tesseract_environment::ChangeLinkVisibilityCommand::ConstPtr& cmd)
+rr_env_cmd::ChangeLinkVisibilityCommandPtr ChangeLinkVisibilityCommandToRR(const tesseract::environment::ChangeLinkVisibilityCommand::ConstPtr& cmd)
 {
     rr_env_cmd::ChangeLinkVisibilityCommandPtr rr_cmd(new rr_env_cmd::ChangeLinkVisibilityCommand());
     rr_cmd->link_name = cmd->getLinkName();
@@ -330,10 +330,10 @@ rr_env_cmd::ChangeLinkVisibilityCommandPtr ChangeLinkVisibilityCommandToRR(const
     return rr_cmd;
 }
 
-tesseract_environment::ChangeLinkVisibilityCommand::Ptr ChangeLinkVisibilityCommandFromRR(const rr_env_cmd::ChangeLinkVisibilityCommandPtr& cmd)
+tesseract::environment::ChangeLinkVisibilityCommand::Ptr ChangeLinkVisibilityCommandFromRR(const rr_env_cmd::ChangeLinkVisibilityCommandPtr& cmd)
 {
     RR_NULL_CHECK(cmd);
-    auto ret = std::make_shared<tesseract_environment::ChangeLinkVisibilityCommand>(cmd->link_name, cmd->visible.value != 0);   
+    auto ret = std::make_shared<tesseract::environment::ChangeLinkVisibilityCommand>(cmd->link_name, cmd->visible.value != 0);   
     return ret;
 }
 
@@ -342,16 +342,16 @@ tesseract_environment::ChangeLinkVisibilityCommand::Ptr ChangeLinkVisibilityComm
 //     field int32 noop
 // end
 
-rr_env_cmd::ModifyAllowedCollisionsCommandPtr ModifyAllowedCollisionsCommandToRR(const tesseract_environment::ModifyAllowedCollisionsCommand::ConstPtr& cmd)
+rr_env_cmd::ModifyAllowedCollisionsCommandPtr ModifyAllowedCollisionsCommandToRR(const tesseract::environment::ModifyAllowedCollisionsCommand::ConstPtr& cmd)
 {
     rr_env_cmd::ModifyAllowedCollisionsCommandPtr rr_cmd(new rr_env_cmd::ModifyAllowedCollisionsCommand());
     return rr_cmd;
 }
 
-tesseract_environment::ModifyAllowedCollisionsCommand::Ptr ModifyAllowedCollisionsCommandFromRR(const rr_env_cmd::ModifyAllowedCollisionsCommandPtr& cmd)
+tesseract::environment::ModifyAllowedCollisionsCommand::Ptr ModifyAllowedCollisionsCommandFromRR(const rr_env_cmd::ModifyAllowedCollisionsCommandPtr& cmd)
 {
     RR_NULL_CHECK(cmd);
-    auto ret = std::make_shared<tesseract_environment::ModifyAllowedCollisionsCommand>();
+    auto ret = std::make_shared<tesseract::environment::ModifyAllowedCollisionsCommand>();
     return ret;
 }
 
@@ -360,7 +360,7 @@ tesseract_environment::ModifyAllowedCollisionsCommand::Ptr ModifyAllowedCollisio
 //     field string parent_link
 // end
 
-rr_env_cmd::MoveJointCommandPtr MoveJointCommandToRR(const tesseract_environment::MoveJointCommand::ConstPtr& cmd)
+rr_env_cmd::MoveJointCommandPtr MoveJointCommandToRR(const tesseract::environment::MoveJointCommand::ConstPtr& cmd)
 {
     rr_env_cmd::MoveJointCommandPtr rr_cmd(new rr_env_cmd::MoveJointCommand());
     rr_cmd->joint_name = cmd->getJointName();
@@ -368,10 +368,10 @@ rr_env_cmd::MoveJointCommandPtr MoveJointCommandToRR(const tesseract_environment
     return rr_cmd;
 }
 
-tesseract_environment::MoveJointCommand::Ptr MoveJointCommandFromRR(const rr_env_cmd::MoveJointCommandPtr& cmd)
+tesseract::environment::MoveJointCommand::Ptr MoveJointCommandFromRR(const rr_env_cmd::MoveJointCommandPtr& cmd)
 {
     RR_NULL_CHECK(cmd);
-    auto ret = std::make_shared<tesseract_environment::MoveJointCommand>(cmd->joint_name, cmd->parent_link);
+    auto ret = std::make_shared<tesseract::environment::MoveJointCommand>(cmd->joint_name, cmd->parent_link);
     return ret;
 }
 
@@ -379,18 +379,18 @@ tesseract_environment::MoveJointCommand::Ptr MoveJointCommandFromRR(const rr_env
 //     field Joint joint
 // end
 
-rr_env_cmd::MoveLinkCommandPtr MoveLinkCommandToRR(const tesseract_environment::MoveLinkCommand::ConstPtr& cmd)
+rr_env_cmd::MoveLinkCommandPtr MoveLinkCommandToRR(const tesseract::environment::MoveLinkCommand::ConstPtr& cmd)
 {
     rr_env_cmd::MoveLinkCommandPtr rr_cmd(new rr_env_cmd::MoveLinkCommand());
     rr_cmd->joint = JointToRR(cmd->getJoint());
     return rr_cmd;
 }
 
-tesseract_environment::MoveLinkCommand::Ptr MoveLinkCommandFromRR(const rr_env_cmd::MoveLinkCommandPtr& cmd)
+tesseract::environment::MoveLinkCommand::Ptr MoveLinkCommandFromRR(const rr_env_cmd::MoveLinkCommandPtr& cmd)
 {
     RR_NULL_CHECK(cmd);
     auto joint_ptr = JointFromRR(cmd->joint);
-    auto ret = std::make_shared<tesseract_environment::MoveLinkCommand>(*joint_ptr);
+    auto ret = std::make_shared<tesseract::environment::MoveLinkCommand>(*joint_ptr);
     return ret;
 }
 
@@ -399,16 +399,16 @@ tesseract_environment::MoveLinkCommand::Ptr MoveLinkCommandFromRR(const rr_env_c
 //     field int32 noop
 // end
 
-rr_env_cmd::RemoveAllowedCollisionLinkCommandPtr RemoveAllowedCollisionLinkCommandToRR(const tesseract_environment::RemoveAllowedCollisionLinkCommand::ConstPtr& cmd)
+rr_env_cmd::RemoveAllowedCollisionLinkCommandPtr RemoveAllowedCollisionLinkCommandToRR(const tesseract::environment::RemoveAllowedCollisionLinkCommand::ConstPtr& cmd)
 {
     rr_env_cmd::RemoveAllowedCollisionLinkCommandPtr rr_cmd(new rr_env_cmd::RemoveAllowedCollisionLinkCommand());
     return rr_cmd;
 }
 
-tesseract_environment::RemoveAllowedCollisionLinkCommand::Ptr RemoveAllowedCollisionLinkCommandFromRR(const rr_env_cmd::RemoveAllowedCollisionLinkCommandPtr& cmd)
+tesseract::environment::RemoveAllowedCollisionLinkCommand::Ptr RemoveAllowedCollisionLinkCommandFromRR(const rr_env_cmd::RemoveAllowedCollisionLinkCommandPtr& cmd)
 {
     RR_NULL_CHECK(cmd);
-    auto ret = std::make_shared<tesseract_environment::RemoveAllowedCollisionLinkCommand>();
+    auto ret = std::make_shared<tesseract::environment::RemoveAllowedCollisionLinkCommand>();
     return ret;
 }
 
@@ -416,17 +416,17 @@ tesseract_environment::RemoveAllowedCollisionLinkCommand::Ptr RemoveAllowedColli
 //     field string joint_name
 // end
 
-rr_env_cmd::RemoveJointCommandPtr RemoveJointCommandToRR(const tesseract_environment::RemoveJointCommand::ConstPtr& cmd)
+rr_env_cmd::RemoveJointCommandPtr RemoveJointCommandToRR(const tesseract::environment::RemoveJointCommand::ConstPtr& cmd)
 {
     rr_env_cmd::RemoveJointCommandPtr rr_cmd(new rr_env_cmd::RemoveJointCommand());
     rr_cmd->joint_name = cmd->getJointName();
     return rr_cmd;
 }
 
-tesseract_environment::RemoveJointCommand::Ptr RemoveJointCommandFromRR(const rr_env_cmd::RemoveJointCommandPtr& cmd)
+tesseract::environment::RemoveJointCommand::Ptr RemoveJointCommandFromRR(const rr_env_cmd::RemoveJointCommandPtr& cmd)
 {
     RR_NULL_CHECK(cmd);
-    auto ret = std::make_shared<tesseract_environment::RemoveJointCommand>(cmd->joint_name);
+    auto ret = std::make_shared<tesseract::environment::RemoveJointCommand>(cmd->joint_name);
     return ret;
 }
 
@@ -434,17 +434,17 @@ tesseract_environment::RemoveJointCommand::Ptr RemoveJointCommandFromRR(const rr
 //     field string link_name
 // end
 
-rr_env_cmd::RemoveLinkCommandPtr RemoveLinkCommandToRR(const tesseract_environment::RemoveLinkCommand::ConstPtr& cmd)
+rr_env_cmd::RemoveLinkCommandPtr RemoveLinkCommandToRR(const tesseract::environment::RemoveLinkCommand::ConstPtr& cmd)
 {
     rr_env_cmd::RemoveLinkCommandPtr rr_cmd(new rr_env_cmd::RemoveLinkCommand());
     rr_cmd->link_name = cmd->getLinkName();
     return rr_cmd;
 }
 
-tesseract_environment::RemoveLinkCommand::Ptr RemoveLinkCommandFromRR(const rr_env_cmd::RemoveLinkCommandPtr& cmd)
+tesseract::environment::RemoveLinkCommand::Ptr RemoveLinkCommandFromRR(const rr_env_cmd::RemoveLinkCommandPtr& cmd)
 {
     RR_NULL_CHECK(cmd);
-    auto ret = std::make_shared<tesseract_environment::RemoveLinkCommand>(cmd->link_name);
+    auto ret = std::make_shared<tesseract::environment::RemoveLinkCommand>(cmd->link_name);
     return ret;
 }
 
@@ -452,18 +452,18 @@ tesseract_environment::RemoveLinkCommand::Ptr RemoveLinkCommandFromRR(const rr_e
 //     field Joint joint
 // end
 
-rr_env_cmd::ReplaceJointCommandPtr ReplaceJointCommandToRR(const tesseract_environment::ReplaceJointCommand::ConstPtr& cmd)
+rr_env_cmd::ReplaceJointCommandPtr ReplaceJointCommandToRR(const tesseract::environment::ReplaceJointCommand::ConstPtr& cmd)
 {
     rr_env_cmd::ReplaceJointCommandPtr rr_cmd(new rr_env_cmd::ReplaceJointCommand());
     rr_cmd->joint = JointToRR(cmd->getJoint());
     return rr_cmd;
 }
 
-tesseract_environment::ReplaceJointCommand::Ptr ReplaceJointCommandFromRR(const rr_env_cmd::ReplaceJointCommandPtr& cmd)
+tesseract::environment::ReplaceJointCommand::Ptr ReplaceJointCommandFromRR(const rr_env_cmd::ReplaceJointCommandPtr& cmd)
 {
     RR_NULL_CHECK(cmd);
     auto joint_ptr = JointFromRR(cmd->joint);
-    auto ret = std::make_shared<tesseract_environment::ReplaceJointCommand>(*joint_ptr);
+    auto ret = std::make_shared<tesseract::environment::ReplaceJointCommand>(*joint_ptr);
     return ret;
 }
 
@@ -471,17 +471,17 @@ tesseract_environment::ReplaceJointCommand::Ptr ReplaceJointCommandFromRR(const 
 //     field string active_contact_manager_name
 // end
 
-rr_env_cmd::SetActiveContinuousContactManagerCommandPtr SetActiveContinuousContactManagerCommandToRR(const tesseract_environment::SetActiveContinuousContactManagerCommand::ConstPtr& cmd)
+rr_env_cmd::SetActiveContinuousContactManagerCommandPtr SetActiveContinuousContactManagerCommandToRR(const tesseract::environment::SetActiveContinuousContactManagerCommand::ConstPtr& cmd)
 {
     rr_env_cmd::SetActiveContinuousContactManagerCommandPtr rr_cmd(new rr_env_cmd::SetActiveContinuousContactManagerCommand());
     rr_cmd->active_contact_manager_name = cmd->getName();
     return rr_cmd;
 }
 
-tesseract_environment::SetActiveContinuousContactManagerCommand::Ptr SetActiveContinuousContactManagerCommandFromRR(const rr_env_cmd::SetActiveContinuousContactManagerCommandPtr& cmd)
+tesseract::environment::SetActiveContinuousContactManagerCommand::Ptr SetActiveContinuousContactManagerCommandFromRR(const rr_env_cmd::SetActiveContinuousContactManagerCommandPtr& cmd)
 {
     RR_NULL_CHECK(cmd);
-    auto ret = std::make_shared<tesseract_environment::SetActiveContinuousContactManagerCommand>(cmd->active_contact_manager_name);
+    auto ret = std::make_shared<tesseract::environment::SetActiveContinuousContactManagerCommand>(cmd->active_contact_manager_name);
     return ret;
 }
 
@@ -489,75 +489,75 @@ tesseract_environment::SetActiveContinuousContactManagerCommand::Ptr SetActiveCo
 //     field string active_contact_manager_name
 // end
 
-rr_env_cmd::SetActiveDiscreteContactManagerCommandPtr SetActiveDiscreteContactManagerCommandToRR(const tesseract_environment::SetActiveDiscreteContactManagerCommand::ConstPtr& cmd)
+rr_env_cmd::SetActiveDiscreteContactManagerCommandPtr SetActiveDiscreteContactManagerCommandToRR(const tesseract::environment::SetActiveDiscreteContactManagerCommand::ConstPtr& cmd)
 {
     rr_env_cmd::SetActiveDiscreteContactManagerCommandPtr rr_cmd(new rr_env_cmd::SetActiveDiscreteContactManagerCommand());
     rr_cmd->active_contact_manager_name = cmd->getName();
     return rr_cmd;
 }
 
-tesseract_environment::SetActiveDiscreteContactManagerCommand::Ptr SetActiveDiscreteContactManagerCommandFromRR(const rr_env_cmd::SetActiveDiscreteContactManagerCommandPtr& cmd)
+tesseract::environment::SetActiveDiscreteContactManagerCommand::Ptr SetActiveDiscreteContactManagerCommandFromRR(const rr_env_cmd::SetActiveDiscreteContactManagerCommandPtr& cmd)
 {
     RR_NULL_CHECK(cmd);
-    auto ret = std::make_shared<tesseract_environment::SetActiveDiscreteContactManagerCommand>(cmd->active_contact_manager_name);
+    auto ret = std::make_shared<tesseract::environment::SetActiveDiscreteContactManagerCommand>(cmd->active_contact_manager_name);
     return ret;
 }
 
 // Command
-RobotRaconteur::RRValuePtr CommandToRR(const tesseract_environment::Command::ConstPtr& cmd)
+RobotRaconteur::RRValuePtr CommandToRR(const tesseract::environment::Command::ConstPtr& cmd)
 {
     switch (cmd->getType())
     {
-        case tesseract_environment::CommandType::ADD_LINK:
-            return AddLinkCommandToRR(std::static_pointer_cast<const tesseract_environment::AddLinkCommand>(cmd));
-        case tesseract_environment::CommandType::MOVE_LINK:
-            return MoveLinkCommandToRR(std::static_pointer_cast<const tesseract_environment::MoveLinkCommand>(cmd));
-        case tesseract_environment::CommandType::MOVE_JOINT:
-            return MoveJointCommandToRR(std::static_pointer_cast<const tesseract_environment::MoveJointCommand>(cmd));
-        case tesseract_environment::CommandType::REMOVE_LINK:
-            return RemoveLinkCommandToRR(std::static_pointer_cast<const tesseract_environment::RemoveLinkCommand>(cmd));
-        case tesseract_environment::CommandType::REMOVE_JOINT:
-            return RemoveJointCommandToRR(std::static_pointer_cast<const tesseract_environment::RemoveJointCommand>(cmd));
-        case tesseract_environment::CommandType::CHANGE_LINK_ORIGIN:
-            return ChangeLinkOriginCommandToRR(std::static_pointer_cast<const tesseract_environment::ChangeLinkOriginCommand>(cmd));
-        case tesseract_environment::CommandType::CHANGE_JOINT_ORIGIN:
-            return ChangeJointOriginCommandToRR(std::static_pointer_cast<const tesseract_environment::ChangeJointOriginCommand>(cmd));
-        case tesseract_environment::CommandType::CHANGE_LINK_COLLISION_ENABLED:
-            return ChangeLinkCollisionEnabledCommandToRR(std::static_pointer_cast<const tesseract_environment::ChangeLinkCollisionEnabledCommand>(cmd));
-        case tesseract_environment::CommandType::CHANGE_LINK_VISIBILITY:
-            return ChangeLinkVisibilityCommandToRR(std::static_pointer_cast<const tesseract_environment::ChangeLinkVisibilityCommand>(cmd));
-        case tesseract_environment::CommandType::MODIFY_ALLOWED_COLLISIONS:
-            return ModifyAllowedCollisionsCommandToRR(std::static_pointer_cast<const tesseract_environment::ModifyAllowedCollisionsCommand>(cmd));
-        case tesseract_environment::CommandType::REMOVE_ALLOWED_COLLISION_LINK:
-            return RemoveAllowedCollisionLinkCommandToRR(std::static_pointer_cast<const tesseract_environment::RemoveAllowedCollisionLinkCommand>(cmd));
-        case tesseract_environment::CommandType::ADD_SCENE_GRAPH:
-            return AddSceneGraphCommandToRR(std::static_pointer_cast<const tesseract_environment::AddSceneGraphCommand>(cmd));
-        case tesseract_environment::CommandType::CHANGE_JOINT_POSITION_LIMITS:
-            return ChangeJointPositionLimitsCommandToRR(std::static_pointer_cast<const tesseract_environment::ChangeJointPositionLimitsCommand>(cmd));
-        case tesseract_environment::CommandType::CHANGE_JOINT_VELOCITY_LIMITS:
-            return ChangeJointVelocityLimitsCommandToRR(std::static_pointer_cast<const tesseract_environment::ChangeJointVelocityLimitsCommand>(cmd));
-        case tesseract_environment::CommandType::CHANGE_JOINT_ACCELERATION_LIMITS:
-            return ChangeJointAccelerationLimitsCommandToRR(std::static_pointer_cast<const tesseract_environment::ChangeJointAccelerationLimitsCommand>(cmd));
-        case tesseract_environment::CommandType::ADD_KINEMATICS_INFORMATION:
-            return AddKinematicsInformationCommandToRR(std::static_pointer_cast<const tesseract_environment::AddKinematicsInformationCommand>(cmd));
-        case tesseract_environment::CommandType::REPLACE_JOINT:
-            return ReplaceJointCommandToRR(std::static_pointer_cast<const tesseract_environment::ReplaceJointCommand>(cmd));
-        case tesseract_environment::CommandType::CHANGE_COLLISION_MARGINS:
-            return ChangeCollisionMarginsCommandToRR(std::static_pointer_cast<const tesseract_environment::ChangeCollisionMarginsCommand>(cmd));
-        case tesseract_environment::CommandType::ADD_CONTACT_MANAGERS_PLUGIN_INFO:
-            return AddContactManagersPluginInfoCommandToRR(std::static_pointer_cast<const tesseract_environment::AddContactManagersPluginInfoCommand>(cmd));
-        case tesseract_environment::CommandType::SET_ACTIVE_DISCRETE_CONTACT_MANAGER:
-            return SetActiveDiscreteContactManagerCommandToRR(std::static_pointer_cast<const tesseract_environment::SetActiveDiscreteContactManagerCommand>(cmd));
-        case tesseract_environment::CommandType::SET_ACTIVE_CONTINUOUS_CONTACT_MANAGER:
-            return SetActiveContinuousContactManagerCommandToRR(std::static_pointer_cast<const tesseract_environment::SetActiveContinuousContactManagerCommand>(cmd));
-        case tesseract_environment::CommandType::ADD_TRAJECTORY_LINK:
-            return AddTrajectoryLinkCommandToRR(std::static_pointer_cast<const tesseract_environment::AddTrajectoryLinkCommand>(cmd));
+        case tesseract::environment::CommandType::ADD_LINK:
+            return AddLinkCommandToRR(std::static_pointer_cast<const tesseract::environment::AddLinkCommand>(cmd));
+        case tesseract::environment::CommandType::MOVE_LINK:
+            return MoveLinkCommandToRR(std::static_pointer_cast<const tesseract::environment::MoveLinkCommand>(cmd));
+        case tesseract::environment::CommandType::MOVE_JOINT:
+            return MoveJointCommandToRR(std::static_pointer_cast<const tesseract::environment::MoveJointCommand>(cmd));
+        case tesseract::environment::CommandType::REMOVE_LINK:
+            return RemoveLinkCommandToRR(std::static_pointer_cast<const tesseract::environment::RemoveLinkCommand>(cmd));
+        case tesseract::environment::CommandType::REMOVE_JOINT:
+            return RemoveJointCommandToRR(std::static_pointer_cast<const tesseract::environment::RemoveJointCommand>(cmd));
+        case tesseract::environment::CommandType::CHANGE_LINK_ORIGIN:
+            return ChangeLinkOriginCommandToRR(std::static_pointer_cast<const tesseract::environment::ChangeLinkOriginCommand>(cmd));
+        case tesseract::environment::CommandType::CHANGE_JOINT_ORIGIN:
+            return ChangeJointOriginCommandToRR(std::static_pointer_cast<const tesseract::environment::ChangeJointOriginCommand>(cmd));
+        case tesseract::environment::CommandType::CHANGE_LINK_COLLISION_ENABLED:
+            return ChangeLinkCollisionEnabledCommandToRR(std::static_pointer_cast<const tesseract::environment::ChangeLinkCollisionEnabledCommand>(cmd));
+        case tesseract::environment::CommandType::CHANGE_LINK_VISIBILITY:
+            return ChangeLinkVisibilityCommandToRR(std::static_pointer_cast<const tesseract::environment::ChangeLinkVisibilityCommand>(cmd));
+        case tesseract::environment::CommandType::MODIFY_ALLOWED_COLLISIONS:
+            return ModifyAllowedCollisionsCommandToRR(std::static_pointer_cast<const tesseract::environment::ModifyAllowedCollisionsCommand>(cmd));
+        case tesseract::environment::CommandType::REMOVE_ALLOWED_COLLISION_LINK:
+            return RemoveAllowedCollisionLinkCommandToRR(std::static_pointer_cast<const tesseract::environment::RemoveAllowedCollisionLinkCommand>(cmd));
+        case tesseract::environment::CommandType::ADD_SCENE_GRAPH:
+            return AddSceneGraphCommandToRR(std::static_pointer_cast<const tesseract::environment::AddSceneGraphCommand>(cmd));
+        case tesseract::environment::CommandType::CHANGE_JOINT_POSITION_LIMITS:
+            return ChangeJointPositionLimitsCommandToRR(std::static_pointer_cast<const tesseract::environment::ChangeJointPositionLimitsCommand>(cmd));
+        case tesseract::environment::CommandType::CHANGE_JOINT_VELOCITY_LIMITS:
+            return ChangeJointVelocityLimitsCommandToRR(std::static_pointer_cast<const tesseract::environment::ChangeJointVelocityLimitsCommand>(cmd));
+        case tesseract::environment::CommandType::CHANGE_JOINT_ACCELERATION_LIMITS:
+            return ChangeJointAccelerationLimitsCommandToRR(std::static_pointer_cast<const tesseract::environment::ChangeJointAccelerationLimitsCommand>(cmd));
+        case tesseract::environment::CommandType::ADD_KINEMATICS_INFORMATION:
+            return AddKinematicsInformationCommandToRR(std::static_pointer_cast<const tesseract::environment::AddKinematicsInformationCommand>(cmd));
+        case tesseract::environment::CommandType::REPLACE_JOINT:
+            return ReplaceJointCommandToRR(std::static_pointer_cast<const tesseract::environment::ReplaceJointCommand>(cmd));
+        case tesseract::environment::CommandType::CHANGE_COLLISION_MARGINS:
+            return ChangeCollisionMarginsCommandToRR(std::static_pointer_cast<const tesseract::environment::ChangeCollisionMarginsCommand>(cmd));
+        case tesseract::environment::CommandType::ADD_CONTACT_MANAGERS_PLUGIN_INFO:
+            return AddContactManagersPluginInfoCommandToRR(std::static_pointer_cast<const tesseract::environment::AddContactManagersPluginInfoCommand>(cmd));
+        case tesseract::environment::CommandType::SET_ACTIVE_DISCRETE_CONTACT_MANAGER:
+            return SetActiveDiscreteContactManagerCommandToRR(std::static_pointer_cast<const tesseract::environment::SetActiveDiscreteContactManagerCommand>(cmd));
+        case tesseract::environment::CommandType::SET_ACTIVE_CONTINUOUS_CONTACT_MANAGER:
+            return SetActiveContinuousContactManagerCommandToRR(std::static_pointer_cast<const tesseract::environment::SetActiveContinuousContactManagerCommand>(cmd));
+        case tesseract::environment::CommandType::ADD_TRAJECTORY_LINK:
+            return AddTrajectoryLinkCommandToRR(std::static_pointer_cast<const tesseract::environment::AddTrajectoryLinkCommand>(cmd));
         default:
             throw RR::InvalidArgumentException("Invalid command type");
     }
 }
 
-tesseract_environment::Command::Ptr CommandFromRR(const RobotRaconteur::RRValuePtr& cmd)
+tesseract::environment::Command::Ptr CommandFromRR(const RobotRaconteur::RRValuePtr& cmd)
 {
     RR_NULL_CHECK(cmd);
     auto cmd_type = cmd->RRType();
@@ -657,7 +657,7 @@ tesseract_environment::Command::Ptr CommandFromRR(const RobotRaconteur::RRValueP
 }
 
 // Commands
-rr_env_cmd::CommandsPtr CommandsToRR(const tesseract_environment::Commands& commands)
+rr_env_cmd::CommandsPtr CommandsToRR(const tesseract::environment::Commands& commands)
 {
     rr_env_cmd::CommandsPtr rr_commands(new rr_env_cmd::Commands());
     rr_commands->commands = RR::AllocateEmptyRRList<RR::RRValue>();
@@ -669,10 +669,10 @@ rr_env_cmd::CommandsPtr CommandsToRR(const tesseract_environment::Commands& comm
 
 }
 
-tesseract_environment::Commands CommandsFromRR(const rr_env_cmd::CommandsPtr& commands)
+tesseract::environment::Commands CommandsFromRR(const rr_env_cmd::CommandsPtr& commands)
 {
     RR_NULL_CHECK(commands);
-    tesseract_environment::Commands ret;
+    tesseract::environment::Commands ret;
     RR_NULL_CHECK(commands->commands);
     for (const auto& cmd : *commands->commands)
     {

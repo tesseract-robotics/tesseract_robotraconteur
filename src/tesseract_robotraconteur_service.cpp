@@ -25,8 +25,9 @@
 
 #include <boost/program_options.hpp>
 #include "tesseract_robotraconteur/tesseract_robotics_impl.h"
-#include <tesseract_task_composer/core/task_composer_plugin_factory.h>
+#include <tesseract/task_composer/task_composer_server.h>
 #include <drekar_launch_process_cpp/drekar_launch_process_cpp.h>
+#include <tesseract/common/resource_locator.h>
 
 #include "robotraconteur_generated.h"
 
@@ -56,31 +57,31 @@ int main(int argc, char **argv)
 
         // RobotRaconteur::Companion::RegisterStdRobDefServiceTypes();
 
-        auto resource_locator = std::make_shared<tesseract_common::GeneralResourceLocator>();
+        auto resource_locator = std::make_shared<tesseract::common::GeneralResourceLocator>();
 
-        tesseract_common::fs::path urdf_path(urdf_fname);
-        tesseract_common::fs::path srdf_path(srdf_fname);
-        tesseract_common::fs::path task_plugin_config_file_path(task_plugin_config_file);
+        std::filesystem::path urdf_path(urdf_fname);
+        std::filesystem::path srdf_path(srdf_fname);
+        std::filesystem::path task_plugin_config_file_path(task_plugin_config_file);
 
-        if (!boost::filesystem::exists(urdf_path))
+        if (!std::filesystem::exists(urdf_path))
         {
             std::cerr << "URDF file does not exist: " << urdf_fname << std::endl;
             return 1;
         }
 
-        if (!boost::filesystem::exists(srdf_path))
+        if (!std::filesystem::exists(srdf_path))
         {
             std::cerr << "SRDF file does not exist: " << srdf_fname << std::endl;
             return 1;
         }
 
-        if (!boost::filesystem::exists(task_plugin_config_file_path))
+        if (!std::filesystem::exists(task_plugin_config_file_path))
         {
             std::cerr << "Task plugin config file does not exist: " << task_plugin_config_file << std::endl;
             return 1;
         }
 
-        auto env = std::make_shared<tesseract_environment::Environment>();
+        auto env = std::make_shared<tesseract::environment::Environment>();
         env->init(urdf_path, srdf_path, resource_locator);
         if (!env->isInitialized())
         {
@@ -88,18 +89,17 @@ int main(int argc, char **argv)
             return 1;
         }
 
-        auto executor_factory = std::make_shared<tesseract_planning::TaskComposerPluginFactory>(task_plugin_config_file_path);
+        auto tesseract_server = std::make_shared<tesseract::task_composer::TaskComposerServer>();
+        tesseract_server->loadConfig(task_plugin_config_file_path, *resource_locator);
 
-        tesseract_planning::TaskComposerExecutor::Ptr default_executor = executor_factory->createTaskComposerExecutor("TaskflowExecutor");
 
-        auto obj = RR_MAKE_SHARED<TesseractRoboticsImpl>(env, default_executor, executor_factory);
+        auto obj = RR_MAKE_SHARED<TesseractRoboticsImpl>(env, tesseract_server);
         obj->Init();
 
         ServerNodeSetup node_setup(ROBOTRACONTEUR_SERVICE_TYPES, "org.swri.tesseract", 63158, argc, argv);
 
         auto context = RobotRaconteurNode::s()->RegisterService("tesseract","experimental.tesseract_robotics", obj);
         context->AddExtraImport("experimental.tesseract_robotics.command_language");
-        context->AddExtraImport("experimental.tesseract_robotics.tasks.planning");
 
 
         std::cout << "Press Ctrl-C to quit" << std::endl;

@@ -24,7 +24,7 @@
 #ifndef TESSERACT_ROBOTRAOUNTEUR_TESSERACT_ROBOTICS_IMPL_H
 #define TESSERACT_ROBOTRAOUNTEUR_TESSERACT_ROBOTICS_IMPL_H
 
-#include <tesseract_common/macros.h>
+#include <tesseract/common/macros.h>
 TESSERACT_COMMON_IGNORE_WARNINGS_PUSH
 #include <RobotRaconteur.h>
 #include <RobotRaconteurCompanion/StdRobDef/StdRobDefAll.h>
@@ -35,6 +35,9 @@ TESSERACT_COMMON_IGNORE_WARNINGS_POP
 
 #include "robotraconteur_generated.h"
 
+#include <tesseract/task_composer/task_composer_server.h>
+#include <tesseract/common/plugin_info.h>
+
 namespace rr_tesseract = experimental::tesseract_robotics;
 
 namespace tesseract_robotraconteur
@@ -44,14 +47,14 @@ namespace tesseract_robotraconteur
     class TesseractRoboticsImpl : public virtual rr_tesseract::TesseractRobotics_default_impl, public RR_ENABLE_SHARED_FROM_THIS<TesseractRoboticsImpl>
     {
     public:
-        TesseractRoboticsImpl(tesseract_environment::Environment::Ptr default_env, tesseract_planning::TaskComposerExecutor::Ptr default_executor,
-            std::shared_ptr<tesseract_planning::TaskComposerPluginFactory> executor_factory);
+        TesseractRoboticsImpl(tesseract::environment::Environment::Ptr default_env, 
+            std::shared_ptr<tesseract::task_composer::TaskComposerServer> tesseract_server);
 
         void Init();
 
         com::robotraconteur::device::DeviceInfoPtr get_device_info() override;
         RobotRaconteur::RRMapPtr<std::string,rr_env::EnvironmentInfo  > get_environments_info() override;
-        RobotRaconteur::RRMapPtr<std::string,rr_tasks::TaskPipelineInfo  > get_task_pipelines_info() override;
+        RobotRaconteur::RRMapPtr<std::string,rr_tasks::TaskComposerTaskInfo  > get_tasks_info() override;
         RobotRaconteur::RRMapPtr<std::string,rr_tasks::TaskExecutorInfo  >  get_task_executors_info() override;
         std::string load_environment(const std::string& environment_resource_name, const std::string& new_environment_name) override;
 
@@ -63,14 +66,12 @@ namespace tesseract_robotraconteur
 
         boost::shared_ptr<EnvironmentImpl> GetEnvironmentImpl(const std::string &name);
 
-        std::shared_ptr<tesseract_planning::TaskComposerPluginFactory> GetExecutorFactory();
+        std::shared_ptr<tesseract::task_composer::TaskComposerServer> GetServer();
 
     protected:
-        tesseract_environment::Environment::Ptr default_env;
-        tesseract_planning::TaskComposerExecutor::Ptr default_executor;
-        std::shared_ptr<tesseract_planning::TaskComposerPluginFactory> executor_factory;
+        tesseract::environment::Environment::Ptr default_env;
+        std::shared_ptr<tesseract::task_composer::TaskComposerServer> tesseract_server;
         std::map<std::string, RR_SHARED_PTR<EnvironmentImpl> > environments;
-        std::map<std::string, RR_SHARED_PTR<TaskExecutorImpl> > executors;
         boost::mutex this_lock;
     };
 

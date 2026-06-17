@@ -23,6 +23,10 @@ struct EnvironmentInfo
     field varvalue{string} extended
 end
 
+struct EnvironmentHandle
+    field string name
+end
+
 object Environment
     property string name [readonly]
 

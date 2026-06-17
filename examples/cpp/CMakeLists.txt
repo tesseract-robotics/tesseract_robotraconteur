@@ -6,7 +6,6 @@ ROBOTRACONTEUR_GENERATE_THUNK(RR_THUNK_SRCS RR_THUNK_HDRS
     experimental.tesseract_robotics.environment.commands.robdef
     experimental.tesseract_robotics.scene_graph.robdef
     experimental.tesseract_robotics.tasks.robdef
-    experimental.tesseract_robotics.tasks.planning.robdef
     experimental.tesseract_robotics.robdef
 	MASTER_HEADER
 	INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/../../robdef ${RobotRaconteur_STANDARD_ROBDEF_DIRS}
