@@ -96,7 +96,10 @@ int main(int argc, char **argv)
         auto obj = RR_MAKE_SHARED<TesseractRoboticsImpl>(env, tesseract_server);
         obj->Init();
 
-        ServerNodeSetup node_setup(ROBOTRACONTEUR_SERVICE_TYPES, "org.swri.tesseract", 63158, argc, argv);
+        RobotRaconteurNodeSetup node_setup(RobotRaconteurNode::sp(), ROBOTRACONTEUR_SERVICE_TYPES, "org.swri.tesseract", 63158, 
+            RobotRaconteurNodeSetupFlags_SERVER_DEFAULT | RobotRaconteurNodeSetupFlags_JUMBO_MESSAGE,
+            RobotRaconteurNodeSetupFlags_SERVER_DEFAULT_ALLOWED_OVERRIDE,
+            argc, argv);
 
         auto context = RobotRaconteurNode::s()->RegisterService("tesseract","experimental.tesseract_robotics", obj);
         context->AddExtraImport("experimental.tesseract_robotics.command_language");
