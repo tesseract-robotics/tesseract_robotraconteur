@@ -31,6 +31,7 @@
 #include <tesseract/scene_graph/link.h>
 #include <tesseract/scene_graph/joint.h>
 #include <tesseract/scene_graph/graph.h>
+#include <tesseract/scene_graph/scene_state.h>
 
 #include <boost/range/algorithm.hpp>
 
@@ -436,6 +437,41 @@ namespace environment_conv
             auto joint_ptr = JointFromRR(joint);
             ret->addJoint(*joint_ptr);
         }
+
+        return ret;
+    }
+
+    static void _fill_map(const std::unordered_map<std::string,double>& dbl_map,  RR::RRMapPtr<std::string,RR::RRArray<double>>& rr_map)
+    {
+        for(const auto& e : dbl_map)
+        {
+            rr_map->insert(std::make_pair(e.first, RR::ScalarToRRArray(e.second)));
+        }
+    }
+
+    static void _fill_map(const tesseract::common::TransformMap& ft_map, RR::RRMapPtr<std::string,RR::RRNamedArray<rr_geom::Transform>>& rr_map)
+    {
+        for (const auto& e : ft_map)
+        {
+            auto rr_t = RR::AllocateEmptyRRNamedArray<rr_geom::Transform>(1);
+            rr_t->at(0) = RobotRaconteur::Companion::Converters::Eigen::ToTransform(e.second);
+            rr_map->insert(std::make_pair(e.first, rr_t));
+        }
+    }
+
+    // SceneState
+    rr_sg::SceneStatePtr SceneStateToRR(const tesseract::scene_graph::SceneState& scene_state)
+    {
+        rr_sg::SceneStatePtr ret(new rr_sg::SceneState());
+        ret->joints = RR::AllocateEmptyRRMap<std::string,RR::RRArray<double>>();
+        ret->floating_joints = RR::AllocateEmptyRRMap<std::string,RR::RRNamedArray<rr_geom::Transform>>();
+        ret->link_transforms = RR::AllocateEmptyRRMap<std::string,RR::RRNamedArray<rr_geom::Transform>>();
+        ret->joint_transforms = RR::AllocateEmptyRRMap<std::string,RR::RRNamedArray<rr_geom::Transform>>();
+
+        _fill_map(scene_state.joints, ret->joints);
+        _fill_map(scene_state.floating_joints, ret->floating_joints);
+        _fill_map(scene_state.joint_transforms, ret->joint_transforms);
+        _fill_map(scene_state.link_transforms, ret->link_transforms);
 
         return ret;
     }

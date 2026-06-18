@@ -140,6 +140,9 @@ namespace environment_conv
 
     tesseract::scene_graph::SceneGraph::Ptr SceneGraphFromRR(const rr_sg::SceneGraphPtr& scene_graph);
 
+    // SceneState
+    rr_sg::SceneStatePtr SceneStateToRR(const tesseract::scene_graph::SceneState& scene_state);
+
   
 } // namespace environment_conv
 } // namespace tesseract_robotraconteur

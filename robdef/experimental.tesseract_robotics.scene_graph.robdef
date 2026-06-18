@@ -7,6 +7,7 @@ import com.robotraconteur.geometry.shapes
 
 using com.robotraconteur.geometry.Pose
 using com.robotraconteur.geometry.NamedPose
+using com.robotraconteur.geometry.Transform
 using com.robotraconteur.geometry.SpatialInertia
 using com.robotraconteur.geometry.Vector3
 using com.robotraconteur.geometry.shapes.Material
@@ -91,4 +92,11 @@ struct SceneGraph
     field string name
     field Link{list} links
     field Joint{list} joints
+end
+
+struct SceneState
+    field double{string} joints
+    field Transform{string} floating_joints
+    field Transform{string} link_transforms
+    field Transform{string} joint_transforms
 end

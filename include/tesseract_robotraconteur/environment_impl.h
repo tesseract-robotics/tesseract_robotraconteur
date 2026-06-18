@@ -61,6 +61,15 @@ namespace tesseract_robotraconteur
 
         tesseract::environment::Environment::Ptr Environment() const;
 
+        RobotRaconteur::RRMapPtr<std::string,RobotRaconteur::RRNamedArray<com::robotraconteur::geometry::Transform>> getf_current_floating_joint_values(const RobotRaconteur::RRListPtr<RobotRaconteur::RRArray<char>>& joint_names) override;
+        
+        RobotRaconteur::RRArrayPtr<double > getf_current_joint_values(const RobotRaconteur::RRListPtr<RobotRaconteur::RRArray<char>>& joint_names) override;
+        
+        rr_sg::SceneStatePtr getf_state_all() override;
+
+        void setf_state(const RobotRaconteur::RRMapPtr<std::string,RobotRaconteur::RRArray<double >>& joints, const RobotRaconteur::RRMapPtr<std::string,RobotRaconteur::RRNamedArray<com::robotraconteur::geometry::Transform>>& floating_joints) override;
+
+
         protected:
         tesseract::environment::Environment::Ptr env_;
         RR_WEAK_PTR<TesseractRoboticsImpl> parent_;
