@@ -54,7 +54,7 @@ namespace environment_conv
         ret->name = visual.name;
         ret->origin = RRC_Eigen::ToPose(visual.origin);
         ret->geometry = GeometryToRR(*visual.geometry);
-        ret->material = LinkMaterialToRR(visual.material);
+        ret->material = LinkMaterialToRR(visual.material, visual.geometry);
         return ret;
     }
 
@@ -75,9 +75,40 @@ namespace environment_conv
     }
 
     // LinkMaterial
-
-    rr_shapes::MaterialPtr LinkMaterialToRR(const tesseract::scene_graph::Material& link_material)
+    rr_shapes::MaterialPtr LinkMaterialToRR(const tesseract::scene_graph::Material& link_material, const std::shared_ptr<const tesseract::geometry::Geometry>& geom)
     {
+        if (geom)
+        {
+            switch (geom->getType())
+            {
+            case tesseract::geometry::GeometryType::MESH:
+            case tesseract::geometry::GeometryType::POLYGON_MESH:
+            case tesseract::geometry::GeometryType::SDF_MESH:
+            case tesseract::geometry::GeometryType::CONVEX_MESH:
+            {
+                auto mesh = static_cast<const tesseract::geometry::PolygonMesh&>(*geom);
+                const auto mesh_material = mesh.getMaterial();
+                if (mesh_material)
+                {
+                    rr_shapes::MaterialPtr ret(new rr_shapes::Material());
+                    auto base_color = mesh_material->getBaseColorFactor();
+                    auto emissive = mesh_material->getEmissiveFactor();
+                    ret->base_color_factor.s.r = base_color(0);
+                    ret->base_color_factor.s.g = base_color(1);
+                    ret->base_color_factor.s.b = base_color(2);
+                    ret->base_color_factor.s.a = base_color(3);
+                    ret->emissive_factor.s.r = emissive(0);
+                    ret->emissive_factor.s.g = emissive(1);
+                    ret->emissive_factor.s.b = emissive(2);
+                    ret->emissive_factor.s.a = emissive(3);
+                    ret->metallic_factor = mesh_material->getMetallicFactor();
+                    ret->roughness_factor = mesh_material->getRoughnessFactor();
+                    return ret;
+                }
+            }
+            default: break;
+            }
+        }
         rr_shapes::MaterialPtr ret(new rr_shapes::Material());
         ret->base_color_factor.s.r = link_material.color(0);
         ret->base_color_factor.s.g = link_material.color(1);
@@ -86,9 +117,9 @@ namespace environment_conv
         return ret;
     }
 
-    rr_shapes::MaterialPtr LinkMaterialToRR(const tesseract::scene_graph::Material::ConstPtr& link_material)
+    rr_shapes::MaterialPtr LinkMaterialToRR(const tesseract::scene_graph::Material::ConstPtr& link_material, const std::shared_ptr<const tesseract::geometry::Geometry>& geom)
     {
-        return LinkMaterialToRR(*link_material);
+        return LinkMaterialToRR(*link_material, geom);
     }
 
     tesseract::scene_graph::Material::Ptr LinkMaterialFromRR(const rr_shapes::MaterialPtr& link_material)
@@ -354,10 +385,36 @@ namespace environment_conv
     {
         rr_sg::LinkPtr ret(new rr_sg::Link());
         ret->name = link.getName();
-        ret->inertial = InertialToRR(*link.inertial);
+        if (link.inertial)
+        {
+            ret->inertial = InertialToRR(*link.inertial);
+        }
         ret->visual = RR::AllocateEmptyRRList<rr_sg::Visual>();
         for (auto& visual : link.visual)
         {
+            if (visual->geometry)
+            {
+                if(visual->geometry->getType() == tesseract::geometry::GeometryType::COMPOUND_MESH)
+                {
+                    auto& meshes = static_cast<const tesseract::geometry::CompoundMesh&>(*visual->geometry).getMeshes();
+                    size_t submesh_count = 0;
+                    for (const auto& m : meshes)
+                    {
+                        if (!m)
+                        {
+                            continue;
+                        }
+                        auto rr_m = std::get<0>(MeshToRR(*m));
+                        rr_sg::VisualPtr visual_ptr1(new rr_sg::Visual());
+                        visual_ptr1->name = visual->name + "_submesh" + boost::lexical_cast<std::string>(submesh_count);
+                        visual_ptr1->origin = RRC_Eigen::ToPose(visual->origin);
+                        visual_ptr1->geometry = rr_m;
+                        visual_ptr1->material = LinkMaterialToRR(visual->material, m);
+                        ret->visual->push_back(visual_ptr1);
+                    }
+                    continue;
+                }
+            }
             auto visual_ptr = VisualToRR(visual);
             ret->visual->push_back(visual_ptr);
         }

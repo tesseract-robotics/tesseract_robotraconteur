@@ -56,9 +56,9 @@ namespace environment_conv
 
     // LinkMaterial
 
-    rr_shapes::MaterialPtr LinkMaterialToRR(const tesseract::scene_graph::Material& link_material);
+    rr_shapes::MaterialPtr LinkMaterialToRR(const tesseract::scene_graph::Material& link_material, const std::shared_ptr<const tesseract::geometry::Geometry>& geom);
 
-    rr_shapes::MaterialPtr LinkMaterialToRR(const tesseract::scene_graph::Material::ConstPtr& link_material);
+    rr_shapes::MaterialPtr LinkMaterialToRR(const tesseract::scene_graph::Material::ConstPtr& link_material, const std::shared_ptr<const tesseract::geometry::Geometry>& geom);
 
     tesseract::scene_graph::Material::Ptr LinkMaterialFromRR(const rr_shapes::MaterialPtr& link_material);
 

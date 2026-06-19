@@ -90,7 +90,8 @@ namespace conv
         
         if ((static_cast<long>(mesh.getFaceCount()) * 4) != mesh.getFaces()->size())
         {
-            throw RR::InvalidArgumentException("Mesh is not triangular");
+            std::cerr << "mesh.getFaceCount() " << mesh.getFaceCount() << " mesh.getFaces()->size() " << mesh.getFaces()->size() << std::endl;
+            //throw RR::InvalidArgumentException("Mesh is not triangular");
         }
 
         ret->triangles = RR::AllocateEmptyRRNamedArray<rr_shapes::MeshTriangle>(mesh.getFaceCount());
@@ -128,6 +129,10 @@ namespace conv
                 normal.s.z = n.z();
             }
         }
+        else
+        {
+            ret->normals = RR::AllocateEmptyRRNamedArray<rr_geom::Vector3>(0);
+        }
 
         auto& vertex_colors = mesh.getVertexColors();
         if (vertex_colors)
@@ -142,6 +147,10 @@ namespace conv
                 color.s.b = c(2);
             }
         }
+        else
+        {
+            ret->colors = RR::AllocateEmptyRRNamedArray<rr_color::ColorRGB>(0);
+        }
 
         auto& mesh_textures = mesh.getTextures();
         if (mesh_textures)
@@ -153,8 +162,6 @@ namespace conv
                 ret->textures->push_back(MeshTextureToRR(*mesh_textures->at(i)));
             }
         }
-
-        // TODO: MeshMaterial
 
         switch (mesh.getType())
         {
