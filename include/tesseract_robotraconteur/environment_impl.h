@@ -24,7 +24,7 @@
 #ifndef TESSERACT_ROBOTRACONTEUR_ENVIRONMENT_IMPL_H
 #define TESSERACT_ROBOTRACONTEUR_ENVIRONMENT_IMPL_H
 
-#include <tesseract_environment/environment.h>
+#include <tesseract/environment/environment.h>
 
 #include "robotraconteur_generated.h"
 
@@ -38,7 +38,7 @@ namespace tesseract_robotraconteur
     {
         public:
 
-        EnvironmentImpl(tesseract_environment::Environment::Ptr env, RR_SHARED_PTR<TesseractRoboticsImpl> parent);
+        EnvironmentImpl(tesseract::environment::Environment::Ptr env, RR_SHARED_PTR<TesseractRoboticsImpl> parent);
 
         void Init();
 
@@ -59,10 +59,19 @@ namespace tesseract_robotraconteur
 
         rr_env::commands::CommandsPtr getf_command_history() override;
 
-        tesseract_environment::Environment::Ptr Environment() const;
+        tesseract::environment::Environment::Ptr Environment() const;
+
+        RobotRaconteur::RRMapPtr<std::string,RobotRaconteur::RRNamedArray<com::robotraconteur::geometry::Transform>> getf_current_floating_joint_values(const RobotRaconteur::RRListPtr<RobotRaconteur::RRArray<char>>& joint_names) override;
+        
+        RobotRaconteur::RRArrayPtr<double > getf_current_joint_values(const RobotRaconteur::RRListPtr<RobotRaconteur::RRArray<char>>& joint_names) override;
+        
+        rr_sg::SceneStatePtr getf_state_all() override;
+
+        void setf_state(const RobotRaconteur::RRMapPtr<std::string,RobotRaconteur::RRArray<double >>& joints, const RobotRaconteur::RRMapPtr<std::string,RobotRaconteur::RRNamedArray<com::robotraconteur::geometry::Transform>>& floating_joints) override;
+
 
         protected:
-        tesseract_environment::Environment::Ptr env_;
+        tesseract::environment::Environment::Ptr env_;
         RR_WEAK_PTR<TesseractRoboticsImpl> parent_;
     };
 } // namespace tesseract_robotraconteur

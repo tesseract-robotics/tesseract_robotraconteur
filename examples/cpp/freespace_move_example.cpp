@@ -2,18 +2,18 @@
 //
 // This is an example client program showing how to use the Tesseract
 // service with Robot Raconteur. It expects the abb_irb2400 example
-// scene from tesseract_support package to be loaded into the service.
+// scene from tesseract/support package to be loaded into the service.
 //
 // The service should be started prior to running this program. The service
 // can be started using the docker image or from the command line.
 // See the readme for instructions on how to start the service
 // using the docker image. From the command line, use the following command.
-// Adjust /ws/install/share/tesseract_support to the location of the tesseract_support.
+// Adjust /ws/install/share/tesseract/support to the location of the tesseract/support.
 //
 //  export TESSERACT_RESOURCE_PATH=/ws/install/share
-//  tesseract_robotraconteur_service --urdf-file=/ws/install/share/tesseract_support/urdf/abb_irb2400.urdf \
-//     --srdf-file=/ws/install/share/tesseract_support/urdf/abb_irb2400.srdf \
-//     --task-plugin-config-file=/ws/devel/share/tesseract_task_composer/config/task_composer_plugins.yaml
+//  tesseract_robotraconteur_service --urdf-file=/ws/install/share/tesseract/support/urdf/abb_irb2400.urdf \
+//     --srdf-file=/ws/install/share/tesseract/support/urdf/abb_irb2400.srdf \
+//     --task-plugin-config-file=/ws/install/share/tesseract_planning/task_composer/config/task_composer_plugins.yaml
 //
 // Robot Raconteur with C++ requires the RobotRaconteurCore, RobotRaconteurCompanion, and the generated
 // "thunk" source from the service definition "robdef" files that are specific to the Tesseract
@@ -32,7 +32,6 @@
 // Convenience namespace aliases
 namespace RR=RobotRaconteur;
 
-namespace rr_planning = experimental::tesseract_robotics::tasks::planning;
 namespace rr_tasks = experimental::tesseract_robotics::tasks;
 namespace RRC_Eigen=RobotRaconteur::Companion::Converters::Eigen;
 namespace rr_tesseract = experimental::tesseract_robotics;
@@ -84,13 +83,18 @@ int main(int argc, char **argv) {
 
     // Get the available task pipeline information from the service. Tesseract task pipelines
     // execute planning and other operations
-    auto task_info = c->get_task_pipelines_info();
-    std::string output_key = RR::RRArrayToString(task_info->at("FreespacePipeline")->output_keys->front());
+    auto task_info = c->get_tasks_info();
+    std::string output_key = RR::RRArrayToString(RR::rr_cast<RR::RRArray<char>>(task_info->at("FreespacePipeline")->output_keys->at("program")->keys));
+    std::string input_key = RR::RRArrayToString(RR::rr_cast<RR::RRArray<char>>(task_info->at("FreespacePipeline")->input_keys->at("planning_input")->keys));
 
     // Create the environment. In this case, the environment is loaded from the service. The
     // available environments are specified when the service is started. "default" is the
     // default environment.
     c->load_environment("default", "env");
+
+    // Create the EnvironmentHandle to pass to the planner
+    rr_tesseract::environment::EnvironmentHandlePtr env_handle(new rr_tesseract::environment::EnvironmentHandle());
+    env_handle->name = "env";
 
     // Create the instructions
     auto instr1 = build_move_instr(Eigen::Isometry3d::Identity() * Eigen::Translation3d(0.9, -0.3, 1.455) * Eigen::Quaterniond(0.70710678,0,0.70710678,0));
@@ -113,25 +117,22 @@ int main(int argc, char **argv) {
     composite->uuid = new_random_uuid();
 
     // Create and configure the planning problem
-    rr_planning::PlanningTaskComposerProblemPtr problem(new rr_planning::PlanningTaskComposerProblem());
-    problem->name = "example";
-    problem->input = composite;
-    problem->environment_name = "env";
-    problem->manip_info = manip_info;
+    rr_tasks::TaskExecutorInputPtr exec_input(new rr_tasks::TaskExecutorInput());
+    exec_input->task_name = "FreespacePipeline";
+    exec_input->data_storage = RR::AllocateEmptyRRMap<std::string, RR::RRValue>();
+    exec_input->data_storage->insert(std::make_pair("environment", env_handle));
+    exec_input->data_storage->insert(std::make_pair(input_key, composite));
+
+    // Find first executor
+    auto executors_info = c->get_task_executors_info();
+    auto default_task_executor = executors_info->begin()->second->name;
 
     // Get the default task executor. In this case, the task executor will be using Taskflow
     // to execute the pipeline
-    auto executor = c->get_task_executors("default");
-
-    // Create the task executor input and set the pipeline name. In this case, we are using
-    // the FreespacePipeline. Other pipelines are available. These pipelines are configured
-    // when the service is started.
-    rr_tasks::TaskExecutorInputPtr input(new rr_tasks::TaskExecutorInput());
-    input->problem = problem;
-    input->pipeline_name = "FreespacePipeline";
+    auto executor = c->get_task_executors(default_task_executor);
 
     // Run the pipeline
-    auto exec_gen = executor->run(input);
+    auto exec_gen = executor->run(exec_input);
 
     // The pipeline returns a Robot Raconteur "Generator". Generators are a type of coroutine
     // that are used either for a long running operation or a sequence operation.

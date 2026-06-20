@@ -1,0 +1,87 @@
+name: Windows
+
+on:
+  push:
+    branches:
+      - master
+      - 'dev**'
+  pull_request:
+  schedule:
+    - cron: '0 5 * * *'
+
+jobs:
+  ci:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2022]
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        path: target_ws/src
+
+    - name: vcpkg build
+      uses: johnwason/vcpkg-action@v8
+      with:
+        pkgs: >-
+          boost-dll boost-program-options
+          boost-serialization boost-filesystem
+          boost-algorithm boost-array boost-asio
+          boost-assign boost-atomic boost-bind boost-config boost-container boost-date-time
+          boost-smart-ptr boost-foreach boost-format boost-function boost-interprocess
+          boost-intrusive boost-lexical-cast boost-locale boost-random boost-range boost-regex
+          boost-scope-exit boost-signals2 boost-thread boost-tuple boost-unordered
+          boost-utility boost-uuid boost-stacktrace
+          tinyxml2 console-bridge assimp
+          urdfdom  orocos-kdl pcl
+          gtest benchmark flann jsoncpp
+          yaml-cpp
+          blas lapack
+          fcl ompl taskflow
+          bullet3[multithreading,double-precision,rtti]
+          ccd[double-precision] 
+          cereal opencv protobuf
+        triplet: x64-windows-release
+        extra-args: --clean-after-build --overlay-ports=${{ github.workspace }}/target_ws/src/.github/workflows/vcpkg_overlays
+        token: ${{ github.token }}
+        cache-key: ci-${{ matrix.os }}
+
+    - name: configure-msvc
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+
+    - name: update environment
+      shell: bash
+      run: |
+        echo "PATH=${{ env.PATH }};$GITHUB_WORKSPACE\vcpkg\installed\x64-windows-release\bin" >> "$GITHUB_ENV"
+        echo "CMAKE_PREFIX_PATH=$GITHUB_WORKSPACE\vcpkg\installed\x64-windows-release" >> "$GITHUB_ENV"
+
+    - name: Build and Tests
+      uses: johnwason/colcon-action@vcs_recursive
+      with:
+        ccache-prefix: ${{ matrix.distro }}
+        vcs-file: dependencies_windows.repos
+        upstream-args: >- 
+          --cmake-args -G "Ninja" -DVCPKG_TARGET_TRIPLET=x64-windows-release 
+          -DCMAKE_BUILD_TYPE=Release -DBUILD_IPOPT=OFF -DBUILD_SNOPT=OFF 
+          -DTESSERACT_BUILD_TRAJOPT_IFOPT=ON -DVCPKG_APPLOCAL_DEPS=OFF
+          -DProtobuf_PROTOC_EXECUTABLE=$GITHUB_WORKSPACE/vcpkg/installed/x64-windows-v143-release/tools/protobuf/protoc.exe
+          -DTESSERACT_ENABLE_EXAMPLES=OFF
+        target-path: target_ws/src
+        target-args: >-
+           --event-handlers console_cohesion+ --packages-ignore tesseract_examples 
+           --cmake-args -G "Ninja" -DVCPKG_TARGET_TRIPLET=x64-windows-release 
+           -DCMAKE_BUILD_TYPE=Release -DTESSERACT_ENABLE_TESTING=ON -DTESSERACT_BUILD_TRAJOPT_IFOPT=ON 
+           -DVCPKG_APPLOCAL_DEPS=OFF -DTESSERACT_ENABLE_EXAMPLES=OFF 
+           -DProtobuf_PROTOC_EXECUTABLE=$GITHUB_WORKSPACE/vcpkg/installed/x64-windows-v143-release/tools/protobuf/protoc.exe
+        run-tests-args: --packages-ignore tesseract_examples
+    - name: collect logs
+      if: failure()
+      uses: actions/upload-artifact@v7
+      with:
+        name: ci-win-logs-${{ matrix.config.name }}
+        path: ./**/*.log
+        retention-days: 7

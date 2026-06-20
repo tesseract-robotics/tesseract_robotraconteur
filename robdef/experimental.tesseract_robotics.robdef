@@ -10,7 +10,7 @@ using com.robotraconteur.device.Device
 using com.robotraconteur.device.DeviceInfo
 using experimental.tesseract_robotics.environment.Environment
 using experimental.tesseract_robotics.environment.EnvironmentInfo
-using experimental.tesseract_robotics.tasks.TaskPipelineInfo
+using experimental.tesseract_robotics.tasks.TaskComposerTaskInfo
 using experimental.tesseract_robotics.tasks.TaskExecutorInfo
 using experimental.tesseract_robotics.tasks.TaskExecutor
 
@@ -18,7 +18,7 @@ object TesseractRobotics
     property DeviceInfo device_info [readonly,nolock]
 
     property EnvironmentInfo{string} environments_info [readonly]
-    property TaskPipelineInfo{string} task_pipelines_info [readonly]
+    property TaskComposerTaskInfo{string} tasks_info [readonly]
     property TaskExecutorInfo{string} task_executors_info [readonly]
 
     objref Environment{string} environments

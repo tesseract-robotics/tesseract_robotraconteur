@@ -25,19 +25,22 @@
 
 #include "tesseract_robotraconteur/conv/tasks_conv.h"
 
+#include <tesseract/task_composer/task_composer_future.h>
+#include <tesseract/task_composer/task_composer_context.h>
+
 namespace rr_action=com::robotraconteur::action;
 namespace RR = RobotRaconteur;
 
 namespace tesseract_robotraconteur
 {
-    TaskExecGenImpl::TaskExecGenImpl(tesseract_planning::TaskComposerExecutor::Ptr executor,
-                    tesseract_planning::TaskComposerNode::Ptr node,
-                    tesseract_planning::TaskComposerProblem::Ptr problem,
-                    tesseract_planning::TaskComposerDataStorage::Ptr data_storage)
-        : AsyncTaskGenerator(RR::RobotRaconteurNode::sp()),
-          executor(executor),
+    TaskExecGenImpl::TaskExecGenImpl(tesseract::task_composer::TaskComposerServer::Ptr tesseract_server,
+                    const std::string& executor_name,
+                    const tesseract::task_composer::TaskComposerNode& node,
+                    tesseract::task_composer::TaskComposerDataStorage::Ptr data_storage)
+        : AsyncTaskGenerator(RR::RobotRaconteurNode::sp(), 5000, -1),
+          tesseract_server(tesseract_server),
+          executor_name(executor_name),
           node(node),
-          problem(problem),
           data_storage(data_storage)
     {
     }
@@ -49,7 +52,8 @@ namespace tesseract_robotraconteur
 
     void TaskExecGenImpl::StartTask()
     {
-        tesseract_planning::TaskComposerFuture::Ptr fut = executor->run(*node, problem, data_storage);
+        auto fut1 = tesseract_server->run(node, data_storage, false, executor_name);
+        std::shared_ptr<tesseract::task_composer::TaskComposerFuture> fut = std::move(fut1);
         weak_fut = fut;
         auto shared_this = RR_DYNAMIC_POINTER_CAST<TaskExecGenImpl>(shared_from_this());
         boost::thread([shared_this, fut]() {
@@ -85,7 +89,7 @@ namespace tesseract_robotraconteur
 
     void TaskExecGenImpl::CloseRequested()
     {
-        tesseract_planning::TaskComposerFuture::Ptr fut = weak_fut.lock();
+        tesseract::task_composer::TaskComposerFuture::Ptr fut = weak_fut.lock();
         if (!fut)
         {
             return;
@@ -98,7 +102,7 @@ namespace tesseract_robotraconteur
 
     void TaskExecGenImpl::AbortRequested()
     {
-        tesseract_planning::TaskComposerFuture::Ptr fut = weak_fut.lock();
+        tesseract::task_composer::TaskComposerFuture::Ptr fut = weak_fut.lock();
         if (!fut)
         {
             return;

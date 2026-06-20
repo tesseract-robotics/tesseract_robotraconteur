@@ -24,15 +24,13 @@
 #ifndef TESSERACT_ROBOTRACONTEUR_CONV_TASKS_CONV_H
 #define TESSERACT_ROBOTRACONTEUR_CONV_TASKS_CONV_H
 
-#include <tesseract_common/macros.h>
+#include <tesseract/common/macros.h>
 TESSERACT_COMMON_IGNORE_WARNINGS_PUSH
 #include <RobotRaconteur.h>
 TESSERACT_COMMON_IGNORE_WARNINGS_POP
 
-#include <tesseract_task_composer/core/task_composer_problem.h>
-#include <tesseract_task_composer/core/task_composer_data_storage.h>
-#include <tesseract_task_composer/planning/planning_task_composer_problem.h>
-#include <tesseract_environment/commands.h>
+#include <tesseract/task_composer/task_composer_data_storage.h>
+#include <tesseract/environment/commands.h>
 
 #include "robotraconteur_generated.h"
 
@@ -40,19 +38,18 @@ namespace rr_tasks = experimental::tesseract_robotics::tasks;
 
 namespace tesseract_robotraconteur
 {
+class TesseractRoboticsImpl;
 namespace conv
 {
-    tesseract_planning::TaskComposerProblem::Ptr TaskComposerProblemFromRR(const RobotRaconteur::RRValuePtr& problem, std::function<tesseract_environment::Environment::ConstPtr(const std::string&)> get_environment_fn);
+    RobotRaconteur::RRMapPtr<std::string,rr_tasks::TaskComposerKey> TaskComposerKeysToRR(const tesseract::task_composer::TaskComposerKeys& keys);
 
-    tesseract_planning::PlanningTaskComposerProblem::Ptr PlanningTaskComposerProblemFromRR(const rr_tasks::planning::PlanningTaskComposerProblemPtr& problem, std::function<tesseract_environment::Environment::ConstPtr(const std::string&)> get_environment_fn);
+    tesseract::common::AnyPoly TaskPolyFromRR(const RobotRaconteur::RRValuePtr& data, const RR_SHARED_PTR<TesseractRoboticsImpl>& server);
 
-    tesseract_common::AnyPoly TaskPolyFromRR(const RobotRaconteur::RRValuePtr& data);
+    RobotRaconteur::RRValuePtr TaskPolyToRR(const tesseract::common::AnyPoly& data);
 
-    RobotRaconteur::RRValuePtr TaskPolyToRR(const tesseract_common::AnyPoly& data);
+    RobotRaconteur::RRMapPtr<std::string,RobotRaconteur::RRValue> TaskComposerDataStorageToRR(const tesseract::task_composer::TaskComposerDataStorage::Ptr& data_storage);
 
-    RobotRaconteur::RRMapPtr<std::string,RobotRaconteur::RRValue> TaskComposerDataStorageToRR(const tesseract_planning::TaskComposerDataStorage::Ptr& data_storage);
-
-    tesseract_planning::TaskComposerDataStorage::Ptr TaskComposerDataStorageFromRR(const RobotRaconteur::RRMapPtr<std::string,RobotRaconteur::RRValue>& data_storage);
+    tesseract::task_composer::TaskComposerDataStorage::Ptr TaskComposerDataStorageFromRR(const RobotRaconteur::RRMapPtr<std::string,RobotRaconteur::RRValue>& data_storage, const RR_SHARED_PTR<TesseractRoboticsImpl>& server);
 } // namespace conv
 } // namespace tesseract_robotraconteur
 

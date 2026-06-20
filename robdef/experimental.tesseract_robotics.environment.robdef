@@ -8,19 +8,24 @@ import experimental.tesseract_robotics.scene_graph
 import experimental.tesseract_robotics.environment.commands
 
 using com.robotraconteur.geometry.Pose
-using com.robotraconteur.geometry.NamedPose
+using com.robotraconteur.geometry.Transform
 using com.robotraconteur.geometry.SpatialInertia
 using com.robotraconteur.geometry.Vector3
 using com.robotraconteur.geometry.shapes.Material
 using experimental.tesseract_robotics.scene_graph.Joint
 using experimental.tesseract_robotics.scene_graph.Link
 using experimental.tesseract_robotics.environment.commands.Commands
+using experimental.tesseract_robotics.scene_graph.SceneState
 
 struct EnvironmentInfo
     field string name
 
     #TODO: Add more fields
     field varvalue{string} extended
+end
+
+struct EnvironmentHandle
+    field string name
 end
 
 object Environment
@@ -32,8 +37,11 @@ object Environment
     function Joint getf_joint(string joint_name)
     function Link getf_link(string link_name)
 
-    # function double[] getf_current_joint_values(string{list} joint_names)
-    # function void setf_state(string{list} joint_names, double[] joint_values, NamedPose{list} transforms)
+    function double[] getf_current_joint_values(string{list} joint_names)
+    function Transform{string} getf_current_floating_joint_values(string{list} joint_names)
+    function SceneState getf_state_joints()
+    function SceneState getf_state_all()
+    function void setf_state(double{string} joints, Transform{string} floating_joints)
     
     function int32 apply_command(varvalue command)
     function int32 apply_commands(Commands command)

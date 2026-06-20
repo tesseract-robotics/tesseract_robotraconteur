@@ -24,9 +24,13 @@
 #include "tesseract_robotraconteur/conv/tasks_conv.h"
 #include "tesseract_robotraconteur/conv/common_conv.h"
 #include "tesseract_robotraconteur/conv/command_language_conv.h"
+#include "tesseract/task_composer/task_composer_keys.h"
+
+#include "tesseract_robotraconteur/tesseract_robotics_impl.h"
 
 #define RR_TASKS_PREFIX "experimental.tesseract_robotics.tasks"
 #define RR_COMMAND_LANG_PREFIX "experimental.tesseract_robotics.command_language"
+#define RR_ENV_PREFIX "experimental.tesseract_robotics.environment"
 
 namespace RR=RobotRaconteur;
 
@@ -34,40 +38,56 @@ namespace tesseract_robotraconteur
 {
 namespace conv
 {
-    tesseract_planning::TaskComposerProblem::Ptr TaskComposerProblemFromRR(const RR::RRValuePtr& problem, std::function<tesseract_environment::Environment::ConstPtr(const std::string&)> get_environment_fn)
+    RobotRaconteur::RRMapPtr<std::string,rr_tasks::TaskComposerKey> TaskComposerKeysToRR(const tesseract::task_composer::TaskComposerKeys& keys)
     {
-        RR_NULL_CHECK(problem);
-        auto problem_type = problem->RRType();
-        if (problem_type == RR_TASKS_PREFIX "." "TaskComposerProblem")
+        auto ret_map = RR::AllocateEmptyRRMap<std::string,rr_tasks::TaskComposerKey>();
+        const auto& data = keys.data();
+        for (const auto& e : data)
         {
-            auto ret = std::make_shared<tesseract_planning::TaskComposerProblem>();
-            auto rr_problem = RR::rr_cast<rr_tasks::TaskComposerProblem>(problem);
-            ret->name = rr_problem->name;
-            ret->input = TaskPolyFromRR(rr_problem->input);
-            return ret;
+            rr_tasks::TaskComposerKeyPtr k(new rr_tasks::TaskComposerKey());
+            k->port = e.first;
+            switch (e.second.index())
+            {
+                case 0:
+                {
+                    auto v1 = std::get<std::string>(e.second);
+                    k->keys = RR::stringToRRArray(v1);
+                    break;
+                }
+                case 1:
+                {
+                    auto v1 = std::get<std::vector<std::string>>(e.second);
+                    k->keys = RR::stringVectorToRRList(v1);
+                    break;
+                    break;
+                }
+                default:
+                    throw RR::InternalErrorException("Internal tesseract error");
+            }
+            ret_map->insert(std::make_pair(e.first,k));
         }
-        else if (problem_type == RR_TASKS_PREFIX ".planning." "PlanningTaskComposerProblem")
-        {
-            return PlanningTaskComposerProblemFromRR(RR_DYNAMIC_POINTER_CAST<rr_tasks::planning::PlanningTaskComposerProblem>(problem), get_environment_fn);
-        }
-        else
-        {
-            throw RR::InvalidArgumentException("Unknown task composer problem type");
-        }
+        return ret_map;
     }
 
-    tesseract_common::AnyPoly TaskPolyFromRR(const RR::RRValuePtr& data)
+
+    tesseract::common::AnyPoly TaskPolyFromRR(const RR::RRValuePtr& data, const RR_SHARED_PTR<TesseractRoboticsImpl>& server)
     {
         if (!data)
         {
-            return tesseract_common::AnyPoly();
+            return tesseract::common::AnyPoly();
         }
         RR_NULL_CHECK(data);
         auto data_type = data->RRType();
         if (data_type == RR_COMMAND_LANG_PREFIX "." "CompositeInstruction")
         {
             auto instr = RR::rr_cast<rr_command::CompositeInstruction>(data);
-            return tesseract_common::AnyPoly(conv::CompositeInstructionFromRR(instr));
+            return tesseract::common::AnyPoly(conv::CompositeInstructionFromRR(instr));
+        }
+        else if (data_type == RR_ENV_PREFIX "." "EnvironmentHandle")
+        {
+            auto env_handle = RR::rr_cast<rr_env::EnvironmentHandle>(data);
+            std::shared_ptr<const tesseract::environment::Environment> env = server->GetEnvironmentImpl(env_handle->name)->Environment();
+            return tesseract::common::AnyPoly(env);
         }
         else
         {
@@ -76,7 +96,7 @@ namespace conv
 
     }
 
-    RR::RRValuePtr TaskPolyToRR(const tesseract_common::AnyPoly& data)
+    RR::RRValuePtr TaskPolyToRR(const tesseract::common::AnyPoly& data)
     {
         if (data.isNull())
         {
@@ -84,35 +104,21 @@ namespace conv
         }
         auto data_type_id = data.getType();
         
-            if (data_type_id == typeid(tesseract_planning::CompositeInstruction))
+            if (data_type_id == typeid(tesseract::command_language::CompositeInstruction))
             {
-                auto instr = data.as<tesseract_planning::CompositeInstruction>();
+                auto instr = data.as<tesseract::command_language::CompositeInstruction>();
                 return conv::CompositeInstructionToRR(instr);
             }
             else
             {
-                throw std::runtime_error("Unknown task poly type");
+                // TODO: unknown data storage types
+                //throw std::runtime_error("Unknown task poly type");
+                return nullptr;
             }
         
     }
 
-    tesseract_planning::PlanningTaskComposerProblem::Ptr PlanningTaskComposerProblemFromRR(const rr_tasks::planning::PlanningTaskComposerProblemPtr& rr_problem, std::function<tesseract_environment::Environment::ConstPtr(const std::string&)> get_environment_fn)
-    {
-        if (!rr_problem)
-        {
-            return std::make_shared<tesseract_planning::PlanningTaskComposerProblem>();
-        }
-        auto ret = std::make_shared<tesseract_planning::PlanningTaskComposerProblem>();
-        ret->name = rr_problem->name;
-        ret->input = std::move(TaskPolyFromRR(rr_problem->input));
-        ret->env = get_environment_fn(rr_problem->environment_name);
-        ret->manip_info = conv::ManipulatorInfoFromRR(rr_problem->manip_info);
-        // TODO: profiles ...
-        ret->profiles = std::make_shared<tesseract_planning::ProfileDictionary>();
-        return ret;
-    }
-
-    RR::RRMapPtr<std::string,RR::RRValue> TaskComposerDataStorageToRR(const tesseract_planning::TaskComposerDataStorage::Ptr& data_storage)
+    RR::RRMapPtr<std::string,RR::RRValue> TaskComposerDataStorageToRR(const tesseract::task_composer::TaskComposerDataStorage::Ptr& data_storage)
     {
         auto ret = RR::AllocateEmptyRRMap<std::string,RR::RRValue>();
         for (const auto& pair : data_storage->getData())
@@ -122,16 +128,16 @@ namespace conv
         return ret;
     }
 
-    tesseract_planning::TaskComposerDataStorage::Ptr TaskComposerDataStorageFromRR(const RR::RRMapPtr<std::string,RR::RRValue>& data_storage)
+    tesseract::task_composer::TaskComposerDataStorage::Ptr TaskComposerDataStorageFromRR(const RR::RRMapPtr<std::string,RR::RRValue>& data_storage, const RR_SHARED_PTR<TesseractRoboticsImpl>& server)
     {
         if (!data_storage)
         {
             return nullptr;
         }
-        auto ret = std::make_shared<tesseract_planning::TaskComposerDataStorage>();
+        auto ret = std::make_shared<tesseract::task_composer::TaskComposerDataStorage>();
         for (const auto& pair : *data_storage)
         {
-            ret->setData(pair.first, TaskPolyFromRR(pair.second));
+            ret->setData(pair.first, TaskPolyFromRR(pair.second, server));
         }
         return ret;
     }

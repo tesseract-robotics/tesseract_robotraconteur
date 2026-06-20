@@ -24,18 +24,16 @@
 #ifndef TESSERACT_ROBOTRAOUNTEUR_TASKS_IMPL_H
 #define TESSERACT_ROBOTRAOUNTEUR_TASKS_IMPL_H
 
-#include <tesseract_common/macros.h>
+#include <tesseract/common/macros.h>
 TESSERACT_COMMON_IGNORE_WARNINGS_PUSH
 #include <RobotRaconteur.h>
 #include <RobotRaconteurCompanion/StdRobDef/StdRobDefAll.h>
 TESSERACT_COMMON_IGNORE_WARNINGS_POP
 
 #include "robotraconteur_generated.h"
-#include <tesseract_task_composer/core/task_composer_executor.h>
-
+#include <tesseract/task_composer/task_composer_server.h>
 
 namespace rr_tasks = experimental::tesseract_robotics::tasks;
-namespace rr_planning = experimental::tesseract_robotics::tasks::planning;
 
 namespace tesseract_robotraconteur
 {
@@ -43,7 +41,7 @@ namespace tesseract_robotraconteur
     class TaskExecutorImpl : public virtual rr_tasks::TaskExecutor_default_impl
     {
     public:
-        TaskExecutorImpl(tesseract_planning::TaskComposerExecutor::Ptr executor, RR_SHARED_PTR<TesseractRoboticsImpl> parent);
+        TaskExecutorImpl(tesseract::task_composer::TaskComposerServer::Ptr tesseract_server, const std::string& executor_name, RR_SHARED_PTR<TesseractRoboticsImpl> parent);
 
         void Init();
 
@@ -54,8 +52,12 @@ namespace tesseract_robotraconteur
         RobotRaconteur::GeneratorPtr<rr_tasks::TaskExecutorStatusPtr, void> run(const rr_tasks::TaskExecutorInputPtr& input) override;
 
     protected:
-        tesseract_planning::TaskComposerExecutor::Ptr executor_;
+        tesseract::task_composer::TaskComposerServer::Ptr tesseract_server;
+        std::string executor_name;
         RR_WEAK_PTR<TesseractRoboticsImpl> parent_;
+
+        void loadDefaultPlannerProfiles();
+        std::shared_ptr<tesseract::common::ProfileDictionary> profiles_;
     };
 } // namespace tesseract_robotraconteur
 

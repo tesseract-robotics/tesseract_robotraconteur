@@ -23,23 +23,25 @@
 
 #include "tesseract_robotraconteur/tesseract_robotics_impl.h"
 
-#include <tesseract_task_composer/core/task_composer_plugin_factory.h>
+#include <tesseract/task_composer/task_composer_server.h>
+#include <tesseract/task_composer/task_composer_node.h>
+
+#include "tesseract_robotraconteur/conv/tasks_conv.h"
 
 namespace RR = RobotRaconteur;
 
 namespace tesseract_robotraconteur
 {
-    TesseractRoboticsImpl::TesseractRoboticsImpl(tesseract_environment::Environment::Ptr default_env, tesseract_planning::TaskComposerExecutor::Ptr default_executor,
-        std::shared_ptr<tesseract_planning::TaskComposerPluginFactory> executor_factory)
-        : default_env(default_env), default_executor(default_executor), executor_factory(executor_factory)
+    TesseractRoboticsImpl::TesseractRoboticsImpl(tesseract::environment::Environment::Ptr default_env,
+        std::shared_ptr<tesseract::task_composer::TaskComposerServer> tesseract_server)
+        : default_env(default_env), tesseract_server(tesseract_server)
     {
        
     }
 
     void TesseractRoboticsImpl::Init()
     {
-        auto rr_default_executor = RR_MAKE_SHARED<TaskExecutorImpl>(default_executor, shared_from_this());
-        executors.insert(std::make_pair("default", rr_default_executor));
+
     }
 
     com::robotraconteur::device::DeviceInfoPtr TesseractRoboticsImpl::get_device_info()
@@ -60,19 +62,20 @@ namespace tesseract_robotraconteur
         return ret;
     }
 
-    RR::RRMapPtr<std::string, rr_tasks::TaskPipelineInfo> TesseractRoboticsImpl::get_task_pipelines_info()
+    RR::RRMapPtr<std::string, rr_tasks::TaskComposerTaskInfo> TesseractRoboticsImpl::get_tasks_info()
     {
         boost::mutex::scoped_lock lock(this_lock);
-        auto ret = RR::AllocateEmptyRRMap<std::string, rr_tasks::TaskPipelineInfo>();
-        auto plugin_info_map = executor_factory->getTaskComposerNodePlugins();
-        for (const auto& pair : plugin_info_map)
+        auto ret = RR::AllocateEmptyRRMap<std::string, rr_tasks::TaskComposerTaskInfo>();
+        std::vector<std::string> task_names = tesseract_server->getAvailableTasks();
+        for (const auto& task_name : task_names)
         {
-            rr_tasks::TaskPipelineInfoPtr ret1(new rr_tasks::TaskPipelineInfo());
-            ret1->name = pair.first;
-            tesseract_planning::TaskComposerNode::UPtr plugin = executor_factory->createTaskComposerNode(pair.first);
-            ret1->input_keys = RR::stringVectorToRRList(plugin->getInputKeys());
-            ret1->output_keys = RR::stringVectorToRRList(plugin->getOutputKeys());
-            ret->insert(std::make_pair(pair.first, ret1));
+            auto& task_node = tesseract_server->getTask(task_name);
+            rr_tasks::TaskComposerTaskInfoPtr ret1(new rr_tasks::TaskComposerTaskInfo());
+            ret1->name = task_node.getName();
+            ret1->uuid = task_node.getUUIDString();
+            ret1->input_keys = conv::TaskComposerKeysToRR(task_node.getInputKeys());
+            ret1->output_keys = conv::TaskComposerKeysToRR(task_node.getOutputKeys());
+            ret->insert(std::make_pair(ret1->name, ret1));
         }
         return ret;
     }
@@ -80,12 +83,13 @@ namespace tesseract_robotraconteur
     RR::RRMapPtr<std::string, rr_tasks::TaskExecutorInfo> TesseractRoboticsImpl::get_task_executors_info()
     {
         auto ret = RR::AllocateEmptyRRMap<std::string, rr_tasks::TaskExecutorInfo>();
+        auto exec_names = tesseract_server->getAvailableExecutors();
         boost::mutex::scoped_lock lock(this_lock);
-        for (const auto& pair : environments)
+        for (const auto& exec_name : exec_names)
         {
             rr_tasks::TaskExecutorInfoPtr info(new rr_tasks::TaskExecutorInfo());
-            info->name = pair.first;
-            ret->insert(std::make_pair(pair.first, info));
+            info->name = exec_name;
+            ret->insert(std::make_pair(exec_name, info));
         }
         return ret;
     }
@@ -97,7 +101,7 @@ namespace tesseract_robotraconteur
         {
             throw RR::InvalidArgumentException("Only default environment is supported");
         }
-        tesseract_environment::Environment::Ptr new_env = default_env->clone();
+        tesseract::environment::Environment::Ptr new_env = default_env->clone();
         new_env->setName(new_environment_name);
         auto rr_env = RR_MAKE_SHARED<EnvironmentImpl>(new_env, shared_from_this());
         environments.insert(std::make_pair(new_environment_name, rr_env));
@@ -112,7 +116,7 @@ namespace tesseract_robotraconteur
         {
             throw RR::InvalidArgumentException("Environment not found");
         }
-        tesseract_environment::Environment::Ptr new_env = env->second->Environment()->clone();
+        tesseract::environment::Environment::Ptr new_env = env->second->Environment()->clone();
         new_env->setName(new_environment_name);
         auto rr_env = RR_MAKE_SHARED<EnvironmentImpl>(new_env, shared_from_this());
         environments.insert(std::make_pair(new_environment_name, rr_env));
@@ -127,12 +131,11 @@ namespace tesseract_robotraconteur
     rr_tasks::TaskExecutorPtr TesseractRoboticsImpl::get_task_executors(const std::string& ind)
     {
         boost::mutex::scoped_lock lock(this_lock);
-        auto executor = executors.find(ind);
-        if (executor == executors.end())
+        if (!tesseract_server->hasExecutor(ind))
         {
-            throw RR::InvalidArgumentException("Executor not found");
+            throw RobotRaconteur::InvalidArgumentException("Invalid executor requested");
         }
-        return executor->second;
+        return RR_MAKE_SHARED<TaskExecutorImpl>(tesseract_server, ind, shared_from_this());
     }
 
     boost::shared_ptr<EnvironmentImpl> TesseractRoboticsImpl::GetEnvironmentImpl(const std::string &name)
@@ -146,9 +149,4 @@ namespace tesseract_robotraconteur
         return env->second;
     }
 
-    std::shared_ptr<tesseract_planning::TaskComposerPluginFactory> TesseractRoboticsImpl::GetExecutorFactory()
-    {
-        return executor_factory;
-    }
-
-} // namespace tesseract_robotraconteur
+ } // namespace tesseract_robotraconteur
